@@ -10,28 +10,98 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+/**
+ * Gestionnaire en ligne de commande pour l'application de liste de courses.
+ * Parse les arguments et délègue l'exécution aux commandes appropriées.
+ */
 public class CLIHandler {
 
+    /**
+     * Point d'entrée principal pour l'exécution des commandes.
+     *
+     * @param args les arguments de la ligne de commande
+     * @return 0 en cas de succès, 1 en cas d'erreur
+     * @throws ParseException en cas d'erreur dans l'analyse des arguments
+     * @throws IOException en cas d'erreur d'accès aux fichiers
+     */
     public static int exec(String[] args) throws ParseException, IOException {
-        Options cliOptions = new Options();
+        // Configurer les options de ligne de commande
+        Options cliOptions = createOptions();
         CommandLineParser parser = new DefaultParser();
 
-        // Option pour le fichier source
-        cliOptions.addRequiredOption("s", "source", true, "Fichier contenant la liste de courses");
-
         CommandLine cmd = parser.parse(cliOptions, args);
-        String fileName = cmd.getOptionValue("s");
+        String fileName = cmd.getOptionValue("source");
+        
+        // Traiter le format de fichier
+        String format = processFormatOption(cmd);
+        if (format == null) {
+            return 1; // Format non supporté
+        }
 
+        // Traiter les arguments positionnels
         List<String> positionalArgs = cmd.getArgList();
         if (positionalArgs.isEmpty()) {
             System.err.println("Commande manquante. Utilisez 'help' pour voir les commandes disponibles.");
             return 1;
         }
 
+        // Exécuter la commande
+        return executeCommand(positionalArgs, fileName, format);
+    }
+
+    /**
+     * Crée les options de ligne de commande.
+     *
+     * @return les options configurées
+     */
+    private static Options createOptions() {
+        Options cliOptions = new Options();
+        
+        // Option pour le fichier source
+        cliOptions.addRequiredOption("s", "source", true, "Fichier contenant la liste de courses");
+        // Option pour le format
+        cliOptions.addOption("f", "format", true, "Format de fichier (json ou csv)");
+        
+        return cliOptions;
+    }
+
+    /**
+     * Traite l'option de format et vérifie sa validité.
+     *
+     * @param cmd la ligne de commande parsée
+     * @return le format validé, ou null si le format est invalide
+     */
+    private static String processFormatOption(CommandLine cmd) {
+        // Déterminer le format (json par défaut)
+        String format = cmd.hasOption("format") ? cmd.getOptionValue("format") : "json";
+        
+        // Vérifier que le format est supporté
+        if (!format.equalsIgnoreCase("json") && !format.equalsIgnoreCase("csv")) {
+            System.err.println("Format non supporté : " + format + ". Utilisez 'json' ou 'csv'.");
+            return null;
+        }
+        
+        return format;
+    }
+
+    /**
+     * Exécute la commande demandée avec le gestionnaire de liste approprié.
+     *
+     * @param positionalArgs les arguments positionnels
+     * @param fileName le nom du fichier de données
+     * @param format le format de stockage
+     * @return 0 en cas de succès, 1 en cas d'erreur
+     * @throws IOException en cas d'erreur d'accès aux fichiers
+     */
+    private static int executeCommand(List<String> positionalArgs, String fileName, String format) 
+            throws IOException {
         String commandName = positionalArgs.get(0);
 
+        // Créer le gestionnaire de stockage approprié
+        StorageManager storageManager = StorageManagerFactory.createStorageManager(format);
+        
         // Gestionnaire de la liste de courses
-        GroceryManager groceryManager = new GroceryManager();
+        GroceryManager groceryManager = new GroceryManager(storageManager);
         groceryManager.loadGroceryList(fileName);
 
         // Exécution de la commande
@@ -39,7 +109,6 @@ public class CLIHandler {
         if (command.isPresent()) {
             try {
                 command.get().execute(positionalArgs, groceryManager);
-                groceryManager.saveGroceryList(fileName);
                 return 0;
             } catch (Exception e) {
                 System.err.println("Erreur lors de l'exécution de la commande : " + e.getMessage());
@@ -51,7 +120,12 @@ public class CLIHandler {
         }
     }
 
-    // Obtenir la commande à exécuter
+    /**
+     * Obtient l'instance de commande correspondant au nom fourni.
+     *
+     * @param commandName le nom de la commande
+     * @return une Optional contenant la commande si elle existe
+     */
     private static Optional<Command> getCommand(String commandName) {
         return switch (commandName) {
             case "add" -> Optional.of(new AddCommand());
