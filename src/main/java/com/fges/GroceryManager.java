@@ -68,7 +68,7 @@ public class GroceryManager {
 
     public List<String> getGroceryList() {
         return groceryItems.entrySet().stream()
-            .map(entry -> entry.getKey() + "@ " + entry.getValue())
+            .map(entry -> entry.getKey() + ":" + entry.getValue())
             .collect(Collectors.toList());
     }
 
