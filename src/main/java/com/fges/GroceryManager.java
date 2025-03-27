@@ -12,12 +12,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class GroceryManager {
-    // Nouvelle classe interne pour le format JSON
+    // Classe interne pour le format JSON (reste inchangée)
     private static class GroceryItem {
         public String name;
         public int quantity;
 
-        // Constructeur par défaut nécessaire pour Jackson
         public GroceryItem() {}
 
         public GroceryItem(String name, int quantity) {
@@ -29,10 +28,10 @@ public class GroceryManager {
     private Map<String, Integer> groceryItems = new HashMap<>();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    // Méthodes existantes de chargement et sauvegarde (restent inchangées)
     public void loadGroceryList(String fileName) throws IOException {
         Path filePath = Paths.get(fileName);
         if (Files.exists(filePath)) {
-            // Charger comme une liste d'objets GroceryItem
             List<GroceryItem> items = OBJECT_MAPPER.readValue(
                 filePath.toFile(),
                 new TypeReference<List<GroceryItem>>() {}
@@ -48,15 +47,15 @@ public class GroceryManager {
     }
 
     public void saveGroceryList(String fileName) throws IOException {
-        // Convertir en liste d'objets GroceryItem
         List<GroceryItem> itemsToSave = groceryItems.entrySet().stream()
+            .filter(entry -> entry.getValue() > 0)
             .map(entry -> new GroceryItem(entry.getKey(), entry.getValue()))
             .collect(Collectors.toList());
         
         OBJECT_MAPPER.writeValue(new File(fileName), itemsToSave);
     }
 
-    // Les méthodes existantes restent inchangées
+    // Méthodes de gestion des articles
     public void addItem(String itemName, int quantity) {
         groceryItems.put(itemName, 
             groceryItems.getOrDefault(itemName, 0) + quantity);
@@ -66,9 +65,20 @@ public class GroceryManager {
         }
     }
 
+    // Nouvelle méthode pour vérifier l'existence d'un article
+    public boolean doesItemExist(String itemName) {
+        return groceryItems.containsKey(itemName) && groceryItems.get(itemName) > 0;
+    }
+
+    // Nouvelle méthode pour obtenir la quantité d'un article
+    public int getItemQuantity(String itemName) {
+        return groceryItems.getOrDefault(itemName, 0);
+    }
+
     public List<String> getGroceryList() {
         return groceryItems.entrySet().stream()
-            .map(entry -> entry.getKey() + ":" + entry.getValue())
+            .filter(entry -> entry.getValue() > 0)
+            .map(entry -> entry.getKey() + ": " + entry.getValue())
             .collect(Collectors.toList());
     }
 

@@ -12,17 +12,17 @@ public class RemoveCommand implements Command {
 
         String itemName = args.get(1);
         
+        // Vérifier si l'article existe avant toute opération
+        if (!groceryManager.doesItemExist(itemName)) {
+            throw new Exception("L'article " + itemName + " n'existe pas dans la liste.");
+        }
+
         // Si aucune quantité n'est spécifiée, supprimer complètement l'article
         if (args.size() == 2) {
-            if (!groceryManager.getGroceryList().stream().anyMatch(item -> item.startsWith(itemName + ":"))) {
-                throw new Exception("L'article " + itemName + " n'existe pas dans la liste.");
-            }
-            
-            // Supprimer complètement l'article
             groceryManager.addItem(itemName, Integer.MIN_VALUE);
             System.out.println("L'article " + itemName + " a été complètement supprimé.");
         } else {
-            // Logique existante pour supprimer une quantité spécifique
+            // Logique pour supprimer une quantité spécifique
             try {
                 int quantity = Integer.parseInt(args.get(2));
                 if (quantity == 0) {
@@ -31,6 +31,12 @@ public class RemoveCommand implements Command {
                 
                 // Convertir en valeur négative pour le retrait
                 quantity = -Math.abs(quantity);
+                
+                // Vérifier si la quantité à supprimer est valide
+                int currentQuantity = groceryManager.getItemQuantity(itemName);
+                if (Math.abs(quantity) > currentQuantity) {
+                    throw new Exception("Impossible de supprimer plus d'articles qu'il n'en existe.");
+                }
                 
                 // Ajouter ou modifier la quantité de l'article
                 groceryManager.addItem(itemName, quantity);
