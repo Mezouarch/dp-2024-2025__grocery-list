@@ -1,77 +1,83 @@
 package com.fges;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-/**
- * Implémentation de StorageManager pour le format JSON.
- */
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class JsonStorageManager implements StorageManager {
     
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     public Map<String, Integer> loadGroceryList(String fileName) throws IOException {
-        Path filePath = Paths.get(fileName);
-        Map<String, Integer> groceryMap = new HashMap<>();
+        Map<String, Integer> result = new HashMap<>();
+        Map<String, GroceryManager.ItemInfo> itemsWithCategories = loadWithCategories(fileName);
         
-        if (Files.exists(filePath)) {
-            // Lire le contenu du fichier JSON
-            String fileContent = Files.readString(filePath);
-            List<String> loadedList = OBJECT_MAPPER.readValue(fileContent, new TypeReference<List<String>>() {});
-            
-            // Traiter les entrées et consolider la liste
-            processEntries(loadedList, groceryMap);
-        }
+        itemsWithCategories.forEach((name, info) -> 
+            result.put(name, info.getQuantity()));
         
-        return groceryMap;
+        return result;
     }
 
     @Override
     public void saveGroceryList(String fileName, Map<String, Integer> groceryMap) throws IOException {
-        List<String> listToSave = groceryMap.entrySet().stream()
-            .map(entry -> entry.getKey() + ": " + entry.getValue())
-            .collect(Collectors.toList());
+        Map<String, GroceryManager.ItemInfo> itemsWithCategories = new HashMap<>();
+        groceryMap.forEach((name, quantity) -> 
+            itemsWithCategories.put(name, new GroceryManager.ItemInfo(quantity, "default")));
         
-        OBJECT_MAPPER.writeValue(new File(fileName), listToSave);
+        saveWithCategories(fileName, itemsWithCategories);
     }
-    
-    /**
-     * Traite les entrées de la liste chargée et consolide les quantités.
-     * 
-     * @param loadedList la liste chargée depuis le fichier
-     * @param groceryMap la map à remplir
-     */
-    private void processEntries(List<String> loadedList, Map<String, Integer> groceryMap) {
-        Map<String, Integer> tempMap = new HashMap<>();
-        Map<String, String> originalNames = new HashMap<>();
+
+    // Changé de private à package-private (pas de modificateur)
+    Map<String, GroceryManager.ItemInfo> loadWithCategories(String fileName) throws IOException {
+        Map<String, GroceryManager.ItemInfo> result = new HashMap<>();
         
-        for (String item : loadedList) {
-            String[] parts = item.split(": ");
-            String itemName = parts[0].trim();
-            String itemNameLower = itemName.toLowerCase();
-            int quantity = Integer.parseInt(parts[1]);
+        try {
+            Map<String, Map<String, List<String>>> categoryMap = 
+                OBJECT_MAPPER.readValue(new File(fileName), new TypeReference<>() {});
             
-            // Garder le premier nom d'article rencontré (avec sa casse originale)
-            originalNames.putIfAbsent(itemNameLower, itemName);
-            
-            // Additionner les quantités dans la map temporaire
-            tempMap.merge(itemNameLower, quantity, Integer::sum);
+            for (Map.Entry<String, Map<String, List<String>>> categoryEntry : categoryMap.entrySet()) {
+                String category = categoryEntry.getKey();
+                Map<String, List<String>> items = categoryEntry.getValue();
+                
+                for (Map.Entry<String, List<String>> itemEntry : items.entrySet()) {
+                    String itemName = itemEntry.getKey();
+                    int quantity = Integer.parseInt(itemEntry.getValue().get(0));
+                    result.put(itemName, new GroceryManager.ItemInfo(quantity, category));
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement: " + e.getMessage());
         }
         
-        // Mettre à jour la map principale avec les noms originaux
-        for (Map.Entry<String, Integer> entry : tempMap.entrySet()) {
-            groceryMap.put(originalNames.get(entry.getKey()), entry.getValue());
-        }
+        return result;
     }
-} 
+
+    // Changé de private à package-private (pas de modificateur)
+    void saveWithCategories(String fileName, Map<String, GroceryManager.ItemInfo> groceryItems) throws IOException {
+        Map<String, Map<String, List<String>>> categoryMap = new HashMap<>();
+        
+        for (Map.Entry<String, GroceryManager.ItemInfo> entry : groceryItems.entrySet()) {
+            String itemName = entry.getKey();
+            GroceryManager.ItemInfo info = entry.getValue();
+            String category = info.getCategory() != null ? info.getCategory() : "default";
+            
+            categoryMap.computeIfAbsent(category, k -> new HashMap<>())
+                      .put(itemName, Collections.singletonList(String.valueOf(info.getQuantity())));
+        }
+        
+        File file = new File(fileName);
+        File parent = file.getParentFile();
+        if (parent != null) {
+            parent.mkdirs();
+        }
+        
+        OBJECT_MAPPER.writeValue(file, categoryMap);
+    }
+}

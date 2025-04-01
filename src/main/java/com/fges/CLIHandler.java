@@ -37,6 +37,9 @@ public class CLIHandler {
         if (format == null) {
             return 1; // Format non supporté
         }
+        
+        // Récupérer la catégorie si elle est spécifiée
+        String category = cmd.getOptionValue("category");
 
         // Traiter les arguments positionnels
         List<String> positionalArgs = cmd.getArgList();
@@ -46,7 +49,7 @@ public class CLIHandler {
         }
 
         // Exécuter la commande
-        return executeCommand(positionalArgs, fileName, format);
+        return executeCommand(positionalArgs, fileName, format, category);
     }
 
     /**
@@ -57,10 +60,12 @@ public class CLIHandler {
     private static Options createOptions() {
         Options cliOptions = new Options();
         
-        // Option pour le fichier source
+        // Options existantes
         cliOptions.addRequiredOption("s", "source", true, "Fichier contenant la liste de courses");
-        // Option pour le format
         cliOptions.addOption("f", "format", true, "Format de fichier (json ou csv)");
+        
+        // Nouvelle option pour la catégorie
+        cliOptions.addOption("c", "category", true, "Catégorie de l'article");
         
         return cliOptions;
     }
@@ -90,25 +95,39 @@ public class CLIHandler {
      * @param positionalArgs les arguments positionnels
      * @param fileName le nom du fichier de données
      * @param format le format de stockage
+     * @param category la catégorie de l'article (peut être null)
      * @return 0 en cas de succès, 1 en cas d'erreur
      * @throws IOException en cas d'erreur d'accès aux fichiers
      */
-    private static int executeCommand(List<String> positionalArgs, String fileName, String format) 
+    private static int executeCommand(List<String> positionalArgs, String fileName, String format, String category) 
             throws IOException {
         String commandName = positionalArgs.get(0);
-
+        
+        // Vérifier si la commande est "category" suivie d'une valeur
+        if ("category".equals(commandName) && positionalArgs.size() > 1) {
+            category = positionalArgs.get(1);
+            // Reconstruire la liste des arguments en supprimant "category" et sa valeur
+            positionalArgs = positionalArgs.subList(2, positionalArgs.size());
+            if (positionalArgs.isEmpty()) {
+                System.err.println("Commande manquante après la spécification de la catégorie.");
+                return 1;
+            }
+            commandName = positionalArgs.get(0);
+        }
+    
         // Créer le gestionnaire de stockage approprié
         StorageManager storageManager = StorageManagerFactory.createStorageManager(format);
         
         // Gestionnaire de la liste de courses
         GroceryManager groceryManager = new GroceryManager(storageManager);
         groceryManager.loadGroceryList(fileName);
-
+    
         // Exécution de la commande
         Optional<Command> command = getCommand(commandName);
         if (command.isPresent()) {
             try {
-                command.get().execute(positionalArgs, groceryManager);
+                // Passer la catégorie à la commande
+                command.get().execute(positionalArgs, groceryManager, category);
                 return 0;
             } catch (Exception e) {
                 System.err.println("Erreur lors de l'exécution de la commande : " + e.getMessage());

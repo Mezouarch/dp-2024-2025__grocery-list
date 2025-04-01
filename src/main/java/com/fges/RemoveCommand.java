@@ -9,7 +9,7 @@ import java.util.List;
 public class RemoveCommand implements Command {
 
     @Override
-    public void execute(List<String> args, GroceryManager groceryManager) throws Exception {
+    public void execute(List<String> args, GroceryManager groceryManager, String additionalParam) throws Exception {
         // Vérifier les arguments
         validateArgs(args);
 

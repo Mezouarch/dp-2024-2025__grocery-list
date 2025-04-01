@@ -1,6 +1,9 @@
 package com.fges;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,6 +16,7 @@ import java.util.Map;
 public class CsvStorageManager implements StorageManager {
     
     private static final String CSV_HEADER = "item,quantity";
+    private static final String CSV_HEADER_WITH_CATEGORY = "item,quantity,category";
     private static final String CSV_SEPARATOR = ",";
 
     @Override
@@ -21,24 +25,55 @@ public class CsvStorageManager implements StorageManager {
         Map<String, Integer> groceryMap = new HashMap<>();
         
         if (Files.exists(filePath)) {
-            // Lire et traiter le fichier CSV
-            readAndProcessCsvFile(filePath, groceryMap);
+            try (BufferedReader reader = Files.newBufferedReader(filePath)) {
+                // Vérifier l'en-tête
+                String header = reader.readLine();
+                if (header == null) {
+                    return groceryMap;
+                }
+                
+                // Vérifier format
+                boolean hasCategory = header.equals(CSV_HEADER_WITH_CATEGORY);
+                if (!hasCategory && !header.equals(CSV_HEADER)) {
+                    throw new IOException("Format CSV invalide : en-tête incorrect");
+                }
+                
+                // Lire et traiter chaque ligne
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split(CSV_SEPARATOR);
+                    if (parts.length < 2) {
+                        continue; // Ignorer les lignes mal formatées
+                    }
+                    
+                    try {
+                        String itemName = parts[0].trim();
+                        int quantity = Integer.parseInt(parts[1].trim());
+                        
+                        // On ignore la catégorie dans cette implémentation simplifiée 
+                        // puisque l'interface StorageManager utilise Map<String, Integer>
+                        groceryMap.put(itemName, quantity);
+                    } catch (NumberFormatException e) {
+                        // Ignorer les lignes avec des quantités non numériques
+                        System.err.println("Ignorer ligne mal formatée: " + line);
+                    }
+                }
+            }
         }
         
         return groceryMap;
     }
-
+    
     @Override
     public void saveGroceryList(String fileName, Map<String, Integer> groceryMap) throws IOException {
         try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
-            // Écrire l'en-tête
+            // Écrire l'en-tête standard (sans catégorie)
             writer.println(CSV_HEADER);
             
             // Écrire les données
             for (Map.Entry<String, Integer> entry : groceryMap.entrySet()) {
-                writer.printf("%s%s%d%n", 
+                writer.printf("%s,%d%n", 
                     entry.getKey(),
-                    CSV_SEPARATOR,
                     entry.getValue());
             }
         }
@@ -58,7 +93,7 @@ public class CsvStorageManager implements StorageManager {
         try (BufferedReader reader = Files.newBufferedReader(filePath)) {
             // Vérifier l'en-tête
             String header = reader.readLine();
-            if (header == null || !header.equals(CSV_HEADER)) {
+            if (header == null || (!header.equals(CSV_HEADER) && !header.equals(CSV_HEADER_WITH_CATEGORY))) {
                 throw new IOException("Format CSV invalide : en-tête manquant ou incorrect");
             }
             
@@ -86,8 +121,8 @@ public class CsvStorageManager implements StorageManager {
     private void processLine(String line, Map<String, String> originalNames, Map<String, Integer> tempMap) 
             throws IOException {
         String[] parts = line.split(CSV_SEPARATOR);
-        if (parts.length != 2) {
-            throw new IOException("Format CSV invalide : chaque ligne doit avoir exactement 2 colonnes");
+        if (parts.length < 2) {
+            throw new IOException("Format CSV invalide : chaque ligne doit avoir au moins 2 colonnes");
         }
         
         String itemName = parts[0].trim();
@@ -105,4 +140,4 @@ public class CsvStorageManager implements StorageManager {
             throw new IOException("Format CSV invalide : la quantité doit être un nombre entier");
         }
     }
-} 
+}

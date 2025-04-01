@@ -8,20 +8,20 @@ import java.util.List;
 public class AddCommand implements Command {
 
     @Override
-    public void execute(List<String> args, GroceryManager groceryManager) throws Exception {
-        // Vérifier le nombre d'arguments
-        validateArgs(args);
-        
-        // Extraire et valider le nom et la quantité
-        String itemName = args.get(1);
-        int quantity = parseQuantity(args.get(2));
-        
-        // Ajouter ou modifier la quantité de l'article
-        groceryManager.addItem(itemName, quantity);
-        
-        // Affiche un message de confirmation
-        displayConfirmation(itemName, quantity);
-    }
+public void execute(List<String> args, GroceryManager groceryManager, String category) throws Exception {
+    // Vérifier le nombre d'arguments
+    validateArgs(args);
+    
+    // Extraire et valider le nom et la quantité
+    String itemName = args.get(1);
+    int quantity = parseQuantity(args.get(2));
+    
+    // Ajouter ou modifier la quantité de l'article
+    groceryManager.addItem(itemName, quantity, category);
+    
+    // Affiche un message de confirmation
+    displayConfirmation(itemName, quantity);
+}
     
     /**
      * Valide les arguments de la commande.
