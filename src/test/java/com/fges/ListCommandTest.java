@@ -27,6 +27,7 @@ class ListCommandTest {
         listCommand = new ListCommand();
         groceryManager = new GroceryManager(new JsonStorageManager());
         File testFile = tempDir.resolve("test_grocery_list.json").toFile();
+        TestUtils.createEmptyJsonFile(testFile);
         groceryManager.loadGroceryList(testFile.getPath());
     }
 

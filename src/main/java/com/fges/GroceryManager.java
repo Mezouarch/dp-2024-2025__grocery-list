@@ -13,8 +13,8 @@ import java.util.Map;
 public class GroceryManager {
     
     private final Map<String, Integer> groceryMap = new HashMap<>();
-    private final Map<String, ItemInfo> groceryItems = new HashMap<>();
-    private final CategoryManager categoryManager;
+    private Map<String, ItemInfo> groceryItems = new HashMap<>();
+    private CategoryManager categoryManager;
     private String currentFileName;
     private final StorageManager storageManager;
 
@@ -40,6 +40,7 @@ public class GroceryManager {
      */
     public GroceryManager(StorageManager storageManager) {
         this.storageManager = storageManager;
+        this.groceryItems = new HashMap<>();
         this.categoryManager = new CategoryManager();
     }
 
@@ -55,18 +56,22 @@ public class GroceryManager {
         groceryItems.clear();
         categoryManager = new CategoryManager();
         
-        if (storageManager instanceof JsonStorageManager) {
-            JsonStorageManager jsonManager = (JsonStorageManager) storageManager;
-            groceryItems.putAll(jsonManager.loadWithCategories(fileName));
-            // Mettre à jour le CategoryManager
-            groceryItems.forEach((name, info) -> 
-                categoryManager.addItemToCategory(info.getCategory(), name));
-        } else {
-            Map<String, Integer> loadedMap = storageManager.loadGroceryList(fileName);
-            loadedMap.forEach((k, v) -> {
-                groceryItems.put(k, new ItemInfo(v, "default"));
-                categoryManager.addItemToCategory("default", k);
-            });
+        try {
+            if (storageManager instanceof JsonStorageManager) {
+                JsonStorageManager jsonManager = (JsonStorageManager) storageManager;
+                groceryItems.putAll(jsonManager.loadWithCategories(fileName));
+                // Mettre à jour le CategoryManager
+                groceryItems.forEach((name, info) -> 
+                    categoryManager.addItemToCategory(info.getCategory(), name));
+            } else {
+                Map<String, Integer> loadedMap = storageManager.loadGroceryList(fileName);
+                loadedMap.forEach((k, v) -> {
+                    groceryItems.put(k, new ItemInfo(v, "default"));
+                    categoryManager.addItemToCategory("default", k);
+                });
+            }
+        } catch (IOException e) {
+            throw new IOException("Erreur lors du chargement: " + fileName, e);
         }
     }
     
@@ -203,9 +208,15 @@ public class GroceryManager {
         }
         
         ItemInfo info = groceryItems.get(itemName);
-        categoryManager.removeItemFromCategory(info.getCategory(), itemName);
+        String category = info.getCategory();
+        categoryManager.removeItemFromCategory(category, itemName);
         groceryItems.remove(itemName);
         groceryMap.remove(itemName);
+        
+        // Si la catégorie est vide, la supprimer
+        if (categoryManager.getItemsInCategory(category).isEmpty()) {
+            categoryManager.removeCategory(category);
+        }
         
         saveIfFileNameExists();
     }

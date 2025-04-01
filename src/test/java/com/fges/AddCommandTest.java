@@ -12,9 +12,12 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 class AddCommandTest {
     private AddCommand addCommand;
@@ -27,6 +30,7 @@ class AddCommandTest {
         addCommand = new AddCommand();
         groceryManager = new GroceryManager(new JsonStorageManager());
         File testFile = tempDir.resolve("test_grocery_list.json").toFile();
+        TestUtils.createEmptyJsonFile(testFile);
         groceryManager.loadGroceryList(testFile.getPath());
     }
 

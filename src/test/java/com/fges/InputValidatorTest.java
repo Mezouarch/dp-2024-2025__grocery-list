@@ -12,6 +12,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 class InputValidatorTest {
 
@@ -21,7 +22,7 @@ class InputValidatorTest {
         @Test
         @DisplayName("Devrait accepter un nom d'article valide")
         void shouldAcceptValidItemName() {
-            assertThatThrownBy(() -> InputValidator.validateItemName("Apple"))
+            assertThatCode(() -> InputValidator.validateItemName("Apple"))
                 .doesNotThrowAnyException();
         }
 
@@ -56,14 +57,14 @@ class InputValidatorTest {
         @Test
         @DisplayName("Devrait accepter une quantité positive")
         void shouldAcceptPositiveQuantity() {
-            assertThatThrownBy(() -> InputValidator.validateQuantity(5))
+            assertThatCode(() -> InputValidator.validateQuantity(5))
                 .doesNotThrowAnyException();
         }
 
         @Test
         @DisplayName("Devrait accepter une quantité négative")
         void shouldAcceptNegativeQuantity() {
-            assertThatThrownBy(() -> InputValidator.validateQuantity(-5))
+            assertThatCode(() -> InputValidator.validateQuantity(-5))
                 .doesNotThrowAnyException();
         }
 
@@ -79,7 +80,7 @@ class InputValidatorTest {
         @ValueSource(strings = {"1", "-1", "100", "-100"})
         @DisplayName("Devrait parser et valider des quantités valides")
         void shouldParseAndValidateValidQuantities(String quantityStr) {
-            assertThatThrownBy(() -> InputValidator.parseAndValidateQuantity(quantityStr))
+            assertThatCode(() -> InputValidator.parseAndValidateQuantity(quantityStr))
                 .doesNotThrowAnyException();
         }
 
@@ -99,7 +100,7 @@ class InputValidatorTest {
         @DisplayName("Devrait accepter des arguments valides")
         void shouldAcceptValidArgs() {
             List<String> args = Arrays.asList("add", "Apple", "5");
-            assertThatThrownBy(() -> InputValidator.validateCommandArgs(args, 3, "add"))
+            assertThatCode(() -> InputValidator.validateCommandArgs(args, 3, "add"))
                 .doesNotThrowAnyException();
         }
 
@@ -127,7 +128,7 @@ class InputValidatorTest {
         @Test
         @DisplayName("Devrait accepter un nom de fichier valide")
         void shouldAcceptValidFileName() {
-            assertThatThrownBy(() -> InputValidator.validateFileName("grocery_list.json"))
+            assertThatCode(() -> InputValidator.validateFileName("grocery_list.json"))
                 .doesNotThrowAnyException();
         }
 
@@ -154,14 +155,14 @@ class InputValidatorTest {
         @Test
         @DisplayName("Devrait accepter le format JSON")
         void shouldAcceptJsonFormat() {
-            assertThatThrownBy(() -> InputValidator.validateStorageFormat("json"))
+            assertThatCode(() -> InputValidator.validateStorageFormat("json"))
                 .doesNotThrowAnyException();
         }
 
         @Test
         @DisplayName("Devrait accepter le format CSV")
         void shouldAcceptCsvFormat() {
-            assertThatThrownBy(() -> InputValidator.validateStorageFormat("csv"))
+            assertThatCode(() -> InputValidator.validateStorageFormat("csv"))
                 .doesNotThrowAnyException();
         }
 

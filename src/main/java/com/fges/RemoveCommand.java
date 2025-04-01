@@ -1,6 +1,7 @@
 package com.fges;
 
 import java.util.List;
+import java.io.IOException;
 
 /**
  * Commande pour supprimer un article de la liste de courses.
@@ -17,7 +18,7 @@ public class RemoveCommand implements Command {
         
         // Vérifier si l'article existe avant toute opération
         if (!groceryManager.doesItemExist(itemName)) {
-            throw new Exception(MessageFormatter.formatItemNotFound(itemName));
+            throw new IllegalArgumentException(MessageFormatter.formatItemNotFound(itemName));
         }
 
         // Si aucune quantité n'est spécifiée, supprimer complètement l'article
@@ -34,7 +35,7 @@ public class RemoveCommand implements Command {
      *
      * @param itemName le nom de l'article à supprimer
      * @param groceryManager le gestionnaire de liste de courses
-     * @throws Exception en cas d'erreur
+     * @throws Exception si une erreur survient lors de l'exécution
      */
     private void removeEntireItem(String itemName, GroceryManager groceryManager) throws Exception {
         groceryManager.removeItem(itemName);
@@ -47,7 +48,7 @@ public class RemoveCommand implements Command {
      * @param itemName le nom de l'article
      * @param quantityStr la quantité à supprimer (en tant que chaîne)
      * @param groceryManager le gestionnaire de liste de courses
-     * @throws Exception en cas d'erreur
+     * @throws Exception si une erreur survient lors de l'exécution
      */
     private void removeSpecificQuantity(String itemName, String quantityStr, GroceryManager groceryManager) 
             throws Exception {
@@ -57,7 +58,7 @@ public class RemoveCommand implements Command {
         // Vérifier si la quantité à supprimer est valide
         int currentQuantity = groceryManager.getItemQuantity(itemName);
         if (Math.abs(quantity) > currentQuantity) {
-            throw new Exception(MessageFormatter.formatInvalidQuantity(itemName, currentQuantity, Math.abs(quantity)));
+            throw new IllegalArgumentException(MessageFormatter.formatInvalidQuantity(itemName, currentQuantity, Math.abs(quantity)));
         }
         
         // Ajouter ou modifier la quantité de l'article

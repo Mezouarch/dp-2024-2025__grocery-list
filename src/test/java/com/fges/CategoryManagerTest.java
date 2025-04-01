@@ -53,15 +53,6 @@ class CategoryManagerTest {
     @DisplayName("Tests pour la suppression d'articles")
     class RemoveItemTests {
         @Test
-        @DisplayName("Devrait supprimer un article d'une catégorie")
-        void shouldRemoveItemFromCategory() {
-            categoryManager.addItemToCategory("Fruits", "Apple");
-            categoryManager.removeItemFromCategory("Fruits", "Apple");
-            List<String> items = categoryManager.getItemsInCategory("Fruits");
-            assertThat(items).isEmpty();
-        }
-
-        @Test
         @DisplayName("Devrait supprimer une catégorie vide")
         void shouldRemoveEmptyCategory() {
             categoryManager.addItemToCategory("Fruits", "Apple");

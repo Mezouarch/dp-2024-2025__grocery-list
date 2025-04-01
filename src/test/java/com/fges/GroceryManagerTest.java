@@ -147,6 +147,7 @@ class GroceryManagerTest {
         @DisplayName("Devrait sauvegarder automatiquement après chaque modification")
         void shouldAutoSaveAfterModifications() throws IOException {
             File testFile = tempDir.resolve("test_grocery_list.json").toFile();
+            TestUtils.createEmptyJsonFile(testFile);
             groceryManager.loadGroceryList(testFile.getPath());
             
             groceryManager.addItem("Apple", 5, "Fruits");

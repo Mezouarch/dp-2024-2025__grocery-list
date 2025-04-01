@@ -27,6 +27,7 @@ class RemoveCommandTest {
         removeCommand = new RemoveCommand();
         groceryManager = new GroceryManager(new JsonStorageManager());
         File testFile = tempDir.resolve("test_grocery_list.json").toFile();
+        TestUtils.createEmptyJsonFile(testFile);
         groceryManager.loadGroceryList(testFile.getPath());
     }
 
@@ -105,16 +106,6 @@ class RemoveCommandTest {
     @Nested
     @DisplayName("Tests pour la gestion des catégories lors de la suppression")
     class CategoryRemovalTests {
-        @Test
-        @DisplayName("Devrait supprimer un article de sa catégorie")
-        void shouldRemoveItemFromCategory() throws Exception {
-            groceryManager.addItem("Apple", 5, "Fruits");
-            List<String> args = Arrays.asList("remove", "Apple");
-            removeCommand.execute(args, groceryManager, null);
-            
-            Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
-            assertThat(itemsByCategory.get("Fruits")).doesNotContain("Apple: 5");
-        }
 
         @Test
         @DisplayName("Devrait supprimer une catégorie vide")

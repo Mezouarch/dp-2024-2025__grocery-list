@@ -48,12 +48,15 @@ public class JsonStorageManager implements StorageManager {
                 
                 for (Map.Entry<String, List<String>> itemEntry : items.entrySet()) {
                     String itemName = itemEntry.getKey();
-                    int quantity = Integer.parseInt(itemEntry.getValue().get(0));
-                    result.put(itemName, new GroceryManager.ItemInfo(quantity, category));
+                    List<String> quantities = itemEntry.getValue();
+                    if (!quantities.isEmpty()) {
+                        int quantity = Integer.parseInt(quantities.get(0));
+                        result.put(itemName, new GroceryManager.ItemInfo(quantity, category));
+                    }
                 }
             }
-        } catch (Exception e) {
-            System.err.println("Erreur lors du chargement: " + e.getMessage());
+        } catch (IOException e) {
+            throw new IOException("Erreur lors du chargement du fichier JSON: " + fileName, e);
         }
         
         return result;

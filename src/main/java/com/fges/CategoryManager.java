@@ -80,9 +80,23 @@ public class CategoryManager {
         List<String> items = categories.get(normalizedCategory);
         if (items != null) {
             items.remove(item);
+            // Si la catégorie est vide, la supprimer
             if (items.isEmpty()) {
                 categories.remove(normalizedCategory);
             }
+        }
+    }
+
+    /**
+     * Supprime une catégorie vide.
+     *
+     * @param category la catégorie à supprimer
+     */
+    public void removeCategory(String category) {
+        String normalizedCategory = normalizeCategory(category);
+        List<String> items = categories.get(normalizedCategory);
+        if (items != null && items.isEmpty()) {
+            categories.remove(normalizedCategory);
         }
     }
 } 
