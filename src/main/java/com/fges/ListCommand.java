@@ -13,7 +13,7 @@ public class ListCommand implements Command {
         Map<String, List<String>> groceryListByCategory = groceryManager.getGroceryListByCategory();
         
         if (groceryListByCategory.isEmpty()) {
-            System.out.println("La liste de courses est vide.");
+            System.out.println(MessageFormatter.formatEmptyList());
         } else {
             // Add the header "Liste de courses"
             System.out.println("Liste de courses:");
@@ -25,7 +25,7 @@ public class ListCommand implements Command {
                     System.out.println("# " + category + ":");
                     items.forEach(item -> System.out.println(item));
                 } else {
-                    System.out.println("Aucun article dans la catégorie: " + category);
+                    System.out.println(MessageFormatter.formatEmptyCategory(category));
                 }
             } else {
                 // Afficher toutes les catégories

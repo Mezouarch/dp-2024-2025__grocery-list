@@ -1,1 +1,1 @@
-[{"name":"Apple","quantity":20},{"name":"Milk","quantity":70}]
+{"default":{"Milk":["10"]}}

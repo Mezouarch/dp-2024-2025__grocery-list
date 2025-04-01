@@ -14,7 +14,7 @@ public class GroceryManager {
     
     private final Map<String, Integer> groceryMap = new HashMap<>();
     private final Map<String, ItemInfo> groceryItems = new HashMap<>();
-
+    private final CategoryManager categoryManager;
     private String currentFileName;
     private final StorageManager storageManager;
 
@@ -40,6 +40,7 @@ public class GroceryManager {
      */
     public GroceryManager(StorageManager storageManager) {
         this.storageManager = storageManager;
+        this.categoryManager = new CategoryManager();
     }
 
     /**
@@ -48,23 +49,29 @@ public class GroceryManager {
      * @param fileName le nom du fichier à charger
      * @throws IOException en cas d'erreur lors du chargement
      */
-   
-
-     public void loadGroceryList(String fileName) throws IOException {
+    public void loadGroceryList(String fileName) throws IOException {
+        InputValidator.validateFileName(fileName);
         this.currentFileName = fileName;
         groceryItems.clear();
+        categoryManager = new CategoryManager();
         
         if (storageManager instanceof JsonStorageManager) {
             JsonStorageManager jsonManager = (JsonStorageManager) storageManager;
-            // Plus besoin de cast car les méthodes sont maintenant accessibles
             groceryItems.putAll(jsonManager.loadWithCategories(fileName));
+            // Mettre à jour le CategoryManager
+            groceryItems.forEach((name, info) -> 
+                categoryManager.addItemToCategory(info.getCategory(), name));
         } else {
             Map<String, Integer> loadedMap = storageManager.loadGroceryList(fileName);
-            loadedMap.forEach((k, v) -> groceryItems.put(k, new ItemInfo(v, "default")));
+            loadedMap.forEach((k, v) -> {
+                groceryItems.put(k, new ItemInfo(v, "default"));
+                categoryManager.addItemToCategory("default", k);
+            });
         }
     }
     
     public void saveGroceryList(String fileName) throws IOException {
+        InputValidator.validateFileName(fileName);
         this.currentFileName = fileName;
         
         if (storageManager instanceof JsonStorageManager) {
@@ -76,12 +83,9 @@ public class GroceryManager {
             storageManager.saveGroceryList(fileName, simpleMap);
         }
     }
-    
-    
 
     /**
      * Ajoute ou met à jour un article dans la liste avec sa catégorie.
-     * Si la quantité devient négative ou nulle, l'article est supprimé.
      *
      * @param itemName le nom de l'article
      * @param quantity la quantité à ajouter (ou retirer si négative)
@@ -89,6 +93,9 @@ public class GroceryManager {
      * @throws IOException en cas d'erreur lors de la sauvegarde automatique
      */
     public void addItem(String itemName, int quantity, String category) throws IOException {
+        InputValidator.validateItemName(itemName);
+        InputValidator.validateQuantity(quantity);
+        
         String trimmedName = itemName.trim();
         String itemCategory = category != null ? category : "default";
         
@@ -99,15 +106,17 @@ public class GroceryManager {
             int newQuantity = existingItem.getQuantity() + quantity;
             if (newQuantity <= 0) {
                 groceryItems.remove(trimmedName);
-                groceryMap.remove(trimmedName);  // Aussi supprimer de groceryMap
+                groceryMap.remove(trimmedName);
+                categoryManager.removeItemFromCategory(existingItem.getCategory(), trimmedName);
             } else {
                 groceryItems.put(trimmedName, new ItemInfo(newQuantity, existingItem.getCategory()));
-                groceryMap.put(trimmedName, newQuantity);  // Mettre à jour groceryMap
+                groceryMap.put(trimmedName, newQuantity);
             }
         } else if (quantity > 0) {
             // Nouvel article
             groceryItems.put(trimmedName, new ItemInfo(quantity, itemCategory));
-            groceryMap.put(trimmedName, quantity);  // Ajouter à groceryMap
+            groceryMap.put(trimmedName, quantity);
+            categoryManager.addItemToCategory(itemCategory, trimmedName);
         }
         
         saveIfFileNameExists();
@@ -115,7 +124,6 @@ public class GroceryManager {
 
     /**
      * Version de compatibilité pour l'ancienne API.
-     * Ajoute ou met à jour un article dans la liste avec la catégorie par défaut.
      *
      * @param itemName le nom de l'article
      * @param quantity la quantité à ajouter (ou retirer si négative)
@@ -133,7 +141,6 @@ public class GroceryManager {
     public Map<String, List<String>> getGroceryListByCategory() {
         Map<String, List<String>> result = new HashMap<>();
         
-        // Grouper les articles par catégorie
         for (Map.Entry<String, ItemInfo> entry : groceryItems.entrySet()) {
             String itemName = entry.getKey();
             ItemInfo info = entry.getValue();
@@ -192,10 +199,14 @@ public class GroceryManager {
      */
     public void removeItem(String itemName) throws Exception {
         if (!groceryItems.containsKey(itemName)) {
-            throw new Exception("L'article " + itemName + " n'existe pas dans la liste.");
+            throw new Exception(MessageFormatter.formatItemNotFound(itemName));
         }
         
+        ItemInfo info = groceryItems.get(itemName);
+        categoryManager.removeItemFromCategory(info.getCategory(), itemName);
         groceryItems.remove(itemName);
+        groceryMap.remove(itemName);
+        
         saveIfFileNameExists();
     }
     

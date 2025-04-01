@@ -3,102 +3,87 @@ package com.fges;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import java.util.Map;
+import java.util.ArrayList;
 
 /**
- * Gestionnaire en ligne de commande pour l'application de liste de courses.
- * Parse les arguments et délègue l'exécution aux commandes appropriées.
+ * Gestionnaire de l'interface en ligne de commande.
+ * Cette classe gère la lecture et l'interprétation des commandes.
  */
 public class CLIHandler {
+    
+    private static final Map<String, Command> COMMANDS = Map.of(
+        "add", new AddCommand(),
+        "remove", new RemoveCommand(),
+        "list", new ListCommand()
+    );
 
     /**
-     * Point d'entrée principal pour l'exécution des commandes.
+     * Point d'entrée principal de l'application.
      *
      * @param args les arguments de la ligne de commande
-     * @return 0 en cas de succès, 1 en cas d'erreur
-     * @throws ParseException en cas d'erreur dans l'analyse des arguments
-     * @throws IOException en cas d'erreur d'accès aux fichiers
+     * @return le code de sortie (0 pour succès, 1 pour erreur)
      */
-    public static int exec(String[] args) throws ParseException, IOException {
-        // Configurer les options de ligne de commande
-        Options cliOptions = createOptions();
-        CommandLineParser parser = new DefaultParser();
+    public static int main(String[] args) {
+        try {
+            if (args.length == 0) {
+                printUsage();
+                return 1;
+            }
 
-        CommandLine cmd = parser.parse(cliOptions, args);
-        String fileName = cmd.getOptionValue("source");
-        
-        // Traiter le format de fichier
-        String format = processFormatOption(cmd);
-        if (format == null) {
-            return 1; // Format non supporté
-        }
-        
-        // Récupérer la catégorie si elle est spécifiée
-        String category = cmd.getOptionValue("category");
+            // Parse les options
+            String fileName = null;
+            String format = "json";
+            String category = null;
+            List<String> positionalArgs = new ArrayList<>();
 
-        // Traiter les arguments positionnels
-        List<String> positionalArgs = cmd.getArgList();
-        if (positionalArgs.isEmpty()) {
-            System.err.println("Commande manquante. Utilisez 'help' pour voir les commandes disponibles.");
+            for (int i = 0; i < args.length; i++) {
+                String arg = args[i];
+                if (arg.startsWith("-")) {
+                    switch (arg) {
+                        case "-s":
+                        case "--source":
+                            if (i + 1 < args.length) {
+                                fileName = args[++i];
+                            } else {
+                                System.err.println("Option -s/--source nécessite un nom de fichier.");
+                                return 1;
+                            }
+                            break;
+                        case "-f":
+                        case "--format":
+                            if (i + 1 < args.length) {
+                                format = args[++i];
+                            } else {
+                                System.err.println("Option -f/--format nécessite un format (json/csv).");
+                                return 1;
+                            }
+                            break;
+                        default:
+                            System.err.println("Option inconnue : " + arg);
+                            return 1;
+                    }
+                } else {
+                    positionalArgs.add(arg);
+                }
+            }
+
+            // Valider les options
+            if (fileName == null) {
+                System.err.println("L'option -s/--source est requise.");
+                return 1;
+            }
+
+            InputValidator.validateStorageFormat(format);
+
+            // Exécuter la commande
+            return executeCommand(positionalArgs, fileName, format, category);
+        } catch (Exception e) {
+            System.err.println("Erreur : " + e.getMessage());
             return 1;
         }
-
-        // Exécuter la commande
-        return executeCommand(positionalArgs, fileName, format, category);
     }
 
-    /**
-     * Crée les options de ligne de commande.
-     *
-     * @return les options configurées
-     */
-    private static Options createOptions() {
-        Options cliOptions = new Options();
-        
-        // Options existantes
-        cliOptions.addRequiredOption("s", "source", true, "Fichier contenant la liste de courses");
-        cliOptions.addOption("f", "format", true, "Format de fichier (json ou csv)");
-        
-        // Nouvelle option pour la catégorie
-        cliOptions.addOption("c", "category", true, "Catégorie de l'article");
-        
-        return cliOptions;
-    }
-
-    /**
-     * Traite l'option de format et vérifie sa validité.
-     *
-     * @param cmd la ligne de commande parsée
-     * @return le format validé, ou null si le format est invalide
-     */
-    private static String processFormatOption(CommandLine cmd) {
-        // Déterminer le format (json par défaut)
-        String format = cmd.hasOption("format") ? cmd.getOptionValue("format") : "json";
-        
-        // Vérifier que le format est supporté
-        if (!format.equalsIgnoreCase("json") && !format.equalsIgnoreCase("csv")) {
-            System.err.println("Format non supporté : " + format + ". Utilisez 'json' ou 'csv'.");
-            return null;
-        }
-        
-        return format;
-    }
-
-    /**
-     * Exécute la commande demandée avec le gestionnaire de liste approprié.
-     *
-     * @param positionalArgs les arguments positionnels
-     * @param fileName le nom du fichier de données
-     * @param format le format de stockage
-     * @param category la catégorie de l'article (peut être null)
-     * @return 0 en cas de succès, 1 en cas d'erreur
-     * @throws IOException en cas d'erreur d'accès aux fichiers
-     */
     private static int executeCommand(List<String> positionalArgs, String fileName, String format, String category) 
             throws IOException {
         String commandName = positionalArgs.get(0);
@@ -126,7 +111,6 @@ public class CLIHandler {
         Optional<Command> command = getCommand(commandName);
         if (command.isPresent()) {
             try {
-                // Passer la catégorie à la commande
                 command.get().execute(positionalArgs, groceryManager, category);
                 return 0;
             } catch (Exception e) {
@@ -134,7 +118,7 @@ public class CLIHandler {
                 return 1;
             }
         } else {
-            System.err.println("Commande inconnue : " + commandName);
+            System.err.println(MessageFormatter.formatUnknownCommand(commandName));
             return 1;
         }
     }
@@ -146,11 +130,28 @@ public class CLIHandler {
      * @return une Optional contenant la commande si elle existe
      */
     private static Optional<Command> getCommand(String commandName) {
-        return switch (commandName) {
-            case "add" -> Optional.of(new AddCommand());
-            case "list" -> Optional.of(new ListCommand());
-            case "remove" -> Optional.of(new RemoveCommand());
-            default -> Optional.empty();
-        };
+        return Optional.ofNullable(COMMANDS.get(commandName));
+    }
+
+    /**
+     * Affiche l'aide de l'application.
+     */
+    private static void printUsage() {
+        System.out.println("Utilisation :");
+        System.out.println("  java -jar grocery-list.jar -s <fichier> [-f format] <commande> [arguments]");
+        System.out.println();
+        System.out.println("Options :");
+        System.out.println("  -s, --source <fichier>  Fichier source (requis)");
+        System.out.println("  -f, --format <format>   Format de stockage (json/csv, défaut: json)");
+        System.out.println();
+        System.out.println("Commandes :");
+        System.out.println("  add <item> <quantity>   Ajouter ou modifier un article");
+        System.out.println("  remove <item> [quantity] Supprimer un article ou une quantité");
+        System.out.println("  list [category]         Afficher la liste des articles");
+        System.out.println();
+        System.out.println("Exemples :");
+        System.out.println("  java -jar grocery-list.jar -s groceries.json add Milk 2");
+        System.out.println("  java -jar grocery-list.jar -s groceries.csv -f csv list");
+        System.out.println("  java -jar grocery-list.jar -s groceries.json category Produits laitiers add Milk 2");
     }
 }
