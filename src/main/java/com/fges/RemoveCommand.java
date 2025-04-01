@@ -10,7 +10,7 @@ import java.io.IOException;
 public class RemoveCommand implements Command {
 
     @Override
-    public void execute(List<String> args, GroceryManager groceryManager, String additionalParam) throws Exception {
+    public String execute(List<String> args, GroceryManager groceryManager, String category) throws Exception {
         // Vérifier les arguments
         InputValidator.validateCommandArgs(args, 2, "remove");
 
@@ -23,10 +23,10 @@ public class RemoveCommand implements Command {
 
         // Si aucune quantité n'est spécifiée, supprimer complètement l'article
         if (args.size() == 2) {
-            removeEntireItem(itemName, groceryManager);
+            return removeEntireItem(itemName, groceryManager);
         } else {
             // Supprimer une quantité spécifique
-            removeSpecificQuantity(itemName, args.get(2), groceryManager);
+            return removeSpecificQuantity(itemName, args.get(2), groceryManager);
         }
     }
     
@@ -35,11 +35,12 @@ public class RemoveCommand implements Command {
      *
      * @param itemName le nom de l'article à supprimer
      * @param groceryManager le gestionnaire de liste de courses
+     * @return le message de confirmation
      * @throws Exception si une erreur survient lors de l'exécution
      */
-    private void removeEntireItem(String itemName, GroceryManager groceryManager) throws Exception {
+    private String removeEntireItem(String itemName, GroceryManager groceryManager) throws Exception {
         groceryManager.removeItem(itemName);
-        System.out.println(MessageFormatter.formatCompleteRemoval(itemName));
+        return MessageFormatter.formatCompleteRemoval(itemName);
     }
     
     /**
@@ -48,9 +49,10 @@ public class RemoveCommand implements Command {
      * @param itemName le nom de l'article
      * @param quantityStr la quantité à supprimer (en tant que chaîne)
      * @param groceryManager le gestionnaire de liste de courses
+     * @return le message de confirmation
      * @throws Exception si une erreur survient lors de l'exécution
      */
-    private void removeSpecificQuantity(String itemName, String quantityStr, GroceryManager groceryManager) 
+    private String removeSpecificQuantity(String itemName, String quantityStr, GroceryManager groceryManager) 
             throws Exception {
         int quantity = InputValidator.parseAndValidateQuantity(quantityStr);
         quantity = -Math.abs(quantity); // Convertir en valeur négative pour le retrait
@@ -62,8 +64,8 @@ public class RemoveCommand implements Command {
         }
         
         // Ajouter ou modifier la quantité de l'article
-        groceryManager.addItem(itemName, quantity);
+        groceryManager.addItem(itemName, quantity, groceryManager.getItemCategory(itemName));
         
-        System.out.println(MessageFormatter.formatRemoveConfirmation(itemName, Math.abs(quantity)));
+        return MessageFormatter.formatRemoveConfirmation(itemName, Math.abs(quantity));
     }
 }

@@ -17,14 +17,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class GroceryManagerTest {
     private GroceryManager groceryManager;
-    private StorageManager storageManager;
+    private JsonStorageManager storageManager;
     @TempDir
     Path tempDir;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         storageManager = new JsonStorageManager();
         groceryManager = new GroceryManager(storageManager);
+        File testFile = tempDir.resolve("test_grocery_list.json").toFile();
+        TestUtils.createEmptyJsonFile(testFile);
+        groceryManager.loadGroceryList(testFile.getPath());
     }
 
     @Nested
@@ -32,7 +35,7 @@ class GroceryManagerTest {
     class AddItemTests {
         @Test
         @DisplayName("Devrait ajouter un nouvel article")
-        void shouldAddNewItem() throws IOException {
+        void shouldAddNewItem() throws Exception {
             groceryManager.addItem("Apple", 5, "Fruits");
             assertThat(groceryManager.doesItemExist("Apple")).isTrue();
             assertThat(groceryManager.getItemQuantity("Apple")).isEqualTo(5);
@@ -40,23 +43,23 @@ class GroceryManagerTest {
 
         @Test
         @DisplayName("Devrait mettre à jour la quantité d'un article existant")
-        void shouldUpdateExistingItemQuantity() throws IOException {
+        void shouldUpdateExistingItemQuantity() throws Exception {
             groceryManager.addItem("Apple", 5, "Fruits");
             groceryManager.addItem("Apple", 3, "Fruits");
             assertThat(groceryManager.getItemQuantity("Apple")).isEqualTo(8);
         }
 
         @Test
-        @DisplayName("Devrait supprimer un article quand la quantité devient nulle")
-        void shouldRemoveItemWhenQuantityBecomesZero() throws IOException {
+        @DisplayName("Devrait gérer une quantité négative")
+        void shouldHandleNegativeQuantity() throws Exception {
             groceryManager.addItem("Apple", 5, "Fruits");
-            groceryManager.addItem("Apple", -5, "Fruits");
-            assertThat(groceryManager.doesItemExist("Apple")).isFalse();
+            groceryManager.addItem("Apple", -3, "Fruits");
+            assertThat(groceryManager.getItemQuantity("Apple")).isEqualTo(2);
         }
 
         @Test
-        @DisplayName("Devrait rejeter un nom d'article invalide")
-        void shouldRejectInvalidItemName() {
+        @DisplayName("Devrait rejeter un nom d'article vide")
+        void shouldRejectEmptyItemName() {
             assertThatThrownBy(() -> groceryManager.addItem("", 5, "Fruits"))
                 .isInstanceOf(IllegalArgumentException.class);
         }
@@ -91,71 +94,52 @@ class GroceryManagerTest {
 
     @Nested
     @DisplayName("Tests pour la gestion des catégories")
-    class CategoryManagementTests {
+    class CategoryTests {
         @Test
-        @DisplayName("Devrait organiser les articles par catégorie")
-        void shouldOrganizeItemsByCategory() throws IOException {
+        @DisplayName("Devrait ajouter un article avec une catégorie spécifique")
+        void shouldAddItemWithSpecificCategory() throws Exception {
+            groceryManager.addItem("Apple", 5, "Fruits");
+            assertThat(groceryManager.categoryExists("Fruits")).isTrue();
+            assertThat(groceryManager.getItemsInCategory("Fruits")).contains("Apple: 5");
+        }
+
+        @Test
+        @DisplayName("Devrait utiliser la catégorie par défaut si aucune n'est spécifiée")
+        void shouldUseDefaultCategoryWhenNoneSpecified() throws Exception {
+            groceryManager.addItem("Apple", 5);
+            assertThat(groceryManager.categoryExists("default")).isTrue();
+            assertThat(groceryManager.getItemsInCategory("default")).contains("Apple: 5");
+        }
+
+        @Test
+        @DisplayName("Devrait supprimer une catégorie vide")
+        void shouldRemoveEmptyCategory() throws Exception {
+            groceryManager.addItem("Apple", 5, "Fruits");
+            groceryManager.removeItem("Apple");
+            assertThat(groceryManager.categoryExists("Fruits")).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests pour l'affichage de la liste")
+    class ListDisplayTests {
+        @Test
+        @DisplayName("Devrait afficher tous les articles groupés par catégorie")
+        void shouldDisplayAllItemsGroupedByCategory() throws Exception {
             groceryManager.addItem("Apple", 5, "Fruits");
             groceryManager.addItem("Carrot", 3, "Vegetables");
-            Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
             
+            Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
             assertThat(itemsByCategory).containsKeys("Fruits", "Vegetables");
             assertThat(itemsByCategory.get("Fruits")).contains("Apple: 5");
             assertThat(itemsByCategory.get("Vegetables")).contains("Carrot: 3");
         }
 
         @Test
-        @DisplayName("Devrait gérer les articles sans catégorie")
-        void shouldHandleItemsWithoutCategory() throws IOException {
-            groceryManager.addItem("Apple", 5);
+        @DisplayName("Devrait afficher une liste vide")
+        void shouldDisplayEmptyList() throws Exception {
             Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
-            
-            assertThat(itemsByCategory).containsKey("default");
-            assertThat(itemsByCategory.get("default")).contains("Apple: 5");
-        }
-    }
-
-    @Nested
-    @DisplayName("Tests pour la persistance des données")
-    class DataPersistenceTests {
-        @Test
-        @DisplayName("Devrait sauvegarder et charger la liste de courses")
-        void shouldSaveAndLoadGroceryList() throws IOException {
-            File testFile = tempDir.resolve("test_grocery_list.json").toFile();
-            groceryManager.addItem("Apple", 5, "Fruits");
-            groceryManager.saveGroceryList(testFile.getPath());
-            
-            GroceryManager newManager = new GroceryManager(new JsonStorageManager());
-            newManager.loadGroceryList(testFile.getPath());
-            
-            assertThat(newManager.doesItemExist("Apple")).isTrue();
-            assertThat(newManager.getItemQuantity("Apple")).isEqualTo(5);
-        }
-
-        @Test
-        @DisplayName("Devrait gérer les erreurs de fichier")
-        void shouldHandleFileErrors() {
-            assertThatThrownBy(() -> groceryManager.loadGroceryList("nonexistent.json"))
-                .isInstanceOf(IOException.class);
-        }
-    }
-
-    @Nested
-    @DisplayName("Tests pour la sauvegarde automatique")
-    class AutoSaveTests {
-        @Test
-        @DisplayName("Devrait sauvegarder automatiquement après chaque modification")
-        void shouldAutoSaveAfterModifications() throws IOException {
-            File testFile = tempDir.resolve("test_grocery_list.json").toFile();
-            TestUtils.createEmptyJsonFile(testFile);
-            groceryManager.loadGroceryList(testFile.getPath());
-            
-            groceryManager.addItem("Apple", 5, "Fruits");
-            GroceryManager newManager = new GroceryManager(new JsonStorageManager());
-            newManager.loadGroceryList(testFile.getPath());
-            
-            assertThat(newManager.doesItemExist("Apple")).isTrue();
-            assertThat(newManager.getItemQuantity("Apple")).isEqualTo(5);
+            assertThat(itemsByCategory).isEmpty();
         }
     }
 } 

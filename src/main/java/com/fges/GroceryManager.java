@@ -51,42 +51,29 @@ public class GroceryManager {
      * @throws IOException en cas d'erreur lors du chargement
      */
     public void loadGroceryList(String fileName) throws IOException {
-        InputValidator.validateFileName(fileName);
-        this.currentFileName = fileName;
-        groceryItems.clear();
-        categoryManager = new CategoryManager();
-        
         try {
-            if (storageManager instanceof JsonStorageManager) {
-                JsonStorageManager jsonManager = (JsonStorageManager) storageManager;
-                groceryItems.putAll(jsonManager.loadWithCategories(fileName));
-                // Mettre à jour le CategoryManager
-                groceryItems.forEach((name, info) -> 
-                    categoryManager.addItemToCategory(info.getCategory(), name));
-            } else {
-                Map<String, Integer> loadedMap = storageManager.loadGroceryList(fileName);
-                loadedMap.forEach((k, v) -> {
-                    groceryItems.put(k, new ItemInfo(v, "default"));
-                    categoryManager.addItemToCategory("default", k);
-                });
-            }
+            Map<String, Integer> loadedItems = storageManager.loadGroceryList(fileName);
+            groceryItems.clear();
+            loadedItems.forEach((itemName, quantity) -> 
+                groceryItems.put(itemName, new ItemInfo(quantity, "default")));
         } catch (IOException e) {
-            throw new IOException("Erreur lors du chargement: " + fileName, e);
+            // Si le fichier est vide ou corrompu, on commence avec une liste vide
+            groceryItems.clear();
+            throw e;
         }
     }
     
+    /**
+     * Sauvegarde la liste de courses dans le fichier spécifié.
+     *
+     * @param fileName le nom du fichier de destination
+     * @throws IOException si une erreur survient lors de la sauvegarde
+     */
     public void saveGroceryList(String fileName) throws IOException {
         InputValidator.validateFileName(fileName);
-        this.currentFileName = fileName;
-        
-        if (storageManager instanceof JsonStorageManager) {
-            JsonStorageManager jsonManager = (JsonStorageManager) storageManager;
-            jsonManager.saveWithCategories(fileName, groceryItems);
-        } else {
-            Map<String, Integer> simpleMap = new HashMap<>();
-            groceryItems.forEach((k, v) -> simpleMap.put(k, v.getQuantity()));
-            storageManager.saveGroceryList(fileName, simpleMap);
-        }
+        Map<String, Integer> itemsToSave = new HashMap<>();
+        groceryItems.forEach((name, info) -> itemsToSave.put(name, info.getQuantity()));
+        storageManager.saveGroceryList(fileName, itemsToSave);
     }
 
     /**
@@ -230,5 +217,36 @@ public class GroceryManager {
         if (currentFileName != null) {
             saveGroceryList(currentFileName);
         }
+    }
+
+    /**
+     * Vérifie si une catégorie existe.
+     *
+     * @param category la catégorie à vérifier
+     * @return true si la catégorie existe
+     */
+    public boolean categoryExists(String category) {
+        return categoryManager.categoryExists(category);
+    }
+
+    /**
+     * Obtient la liste des articles dans une catégorie.
+     *
+     * @param category la catégorie
+     * @return la liste des articles formatés
+     */
+    public List<String> getItemsInCategory(String category) {
+        return categoryManager.getItemsInCategory(category);
+    }
+
+    /**
+     * Obtient la catégorie d'un article.
+     *
+     * @param itemName le nom de l'article
+     * @return la catégorie de l'article
+     */
+    public String getItemCategory(String itemName) {
+        ItemInfo info = groceryItems.get(itemName);
+        return info != null ? info.getCategory() : "default";
     }
 }

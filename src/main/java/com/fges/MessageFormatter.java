@@ -14,10 +14,11 @@ public class MessageFormatter {
      *
      * @param itemName le nom de l'article
      * @param quantity la quantité ajoutée
+     * @param category la catégorie de l'article
      * @return le message formaté
      */
-    public static String formatAddConfirmation(String itemName, int quantity) {
-        return String.format("%d unités de %s ajoutées.", quantity, itemName);
+    public static String formatAddConfirmation(String itemName, int quantity, String category) {
+        return String.format("Ajouté %d %s dans la catégorie '%s'", quantity, itemName, category);
     }
 
     /**
@@ -28,7 +29,7 @@ public class MessageFormatter {
      * @return le message formaté
      */
     public static String formatRemoveConfirmation(String itemName, int quantity) {
-        return String.format("%d unités de %s supprimées.", quantity, itemName);
+        return String.format("Supprimé %d %s", quantity, itemName);
     }
 
     /**
@@ -38,7 +39,7 @@ public class MessageFormatter {
      * @return le message formaté
      */
     public static String formatCompleteRemoval(String itemName) {
-        return String.format("L'article %s a été complètement supprimé.", itemName);
+        return String.format("Supprimé %s", itemName);
     }
 
     /**
@@ -67,7 +68,7 @@ public class MessageFormatter {
      * @return le message formaté
      */
     public static String formatItemNotFound(String itemName) {
-        return String.format("L'article %s n'existe pas dans la liste.", itemName);
+        return String.format("Article non trouvé : %s", itemName);
     }
 
     /**
@@ -79,8 +80,8 @@ public class MessageFormatter {
      * @return le message formaté
      */
     public static String formatInvalidQuantity(String itemName, int currentQuantity, int requestedQuantity) {
-        return String.format("Impossible de supprimer %d unités de %s. Quantité disponible: %d",
-            requestedQuantity, itemName, currentQuantity);
+        return String.format("Quantité invalide pour %s. Quantité actuelle : %d, Quantité demandée : %d",
+                itemName, currentQuantity, requestedQuantity);
     }
 
     /**
@@ -110,5 +111,25 @@ public class MessageFormatter {
      */
     public static String formatUnknownCommand(String commandName) {
         return String.format("Commande inconnue : %s", commandName);
+    }
+
+    /**
+     * Formate un message pour une catégorie non trouvée.
+     *
+     * @param category la catégorie
+     * @return le message formaté
+     */
+    public static String formatCategoryNotFound(String category) {
+        return String.format("Catégorie non trouvée : %s", category);
+    }
+
+    /**
+     * Formate l'en-tête d'une catégorie.
+     *
+     * @param category la catégorie
+     * @return le message formaté
+     */
+    public static String formatCategoryHeader(String category) {
+        return String.format("# %s:", category);
     }
 } 

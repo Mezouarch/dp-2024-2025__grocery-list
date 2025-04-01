@@ -4,39 +4,36 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Commande pour afficher tous les articles de la liste de courses.
+ * Commande pour afficher la liste des articles.
  */
 public class ListCommand implements Command {
 
     @Override
-    public void execute(List<String> args, GroceryManager groceryManager, String category) {
-        Map<String, List<String>> groceryListByCategory = groceryManager.getGroceryListByCategory();
+    public String execute(List<String> args, GroceryManager groceryManager, String category) throws Exception {
+        StringBuilder result = new StringBuilder();
         
-        if (groceryListByCategory.isEmpty()) {
-            System.out.println(MessageFormatter.formatEmptyList());
-        } else {
-            // Add the header "Liste de courses"
-            System.out.println("Liste de courses:");
-            
-            // Si une catégorie est spécifiée, afficher uniquement cette catégorie
-            if (category != null && !category.isEmpty()) {
-                List<String> items = groceryListByCategory.get(category);
-                if (items != null && !items.isEmpty()) {
-                    System.out.println("# " + category + ":");
-                    items.forEach(item -> System.out.println(item));
-                } else {
-                    System.out.println(MessageFormatter.formatEmptyCategory(category));
-                }
-            } else {
-                // Afficher toutes les catégories
-                for (Map.Entry<String, List<String>> entry : groceryListByCategory.entrySet()) {
-                    String categoryName = entry.getKey();
-                    List<String> items = entry.getValue();
-                    
-                    System.out.println("# " + categoryName + ":");
-                    items.forEach(item -> System.out.println(item));
-                }
+        // Si une catégorie est spécifiée, afficher uniquement les articles de cette catégorie
+        if (category != null) {
+            if (!groceryManager.categoryExists(category)) {
+                return MessageFormatter.formatCategoryNotFound(category);
             }
+            result.append(MessageFormatter.formatCategoryHeader(category)).append("\n");
+            groceryManager.getItemsInCategory(category).forEach(item -> result.append(item).append("\n"));
+            return result.toString();
         }
+
+        // Sinon, afficher tous les articles groupés par catégorie
+        Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
+        if (itemsByCategory.isEmpty()) {
+            return MessageFormatter.formatEmptyList();
+        }
+
+        itemsByCategory.forEach((cat, items) -> {
+            result.append(MessageFormatter.formatCategoryHeader(cat)).append("\n");
+            items.forEach(item -> result.append(item).append("\n"));
+            result.append("\n"); // Ligne vide entre les catégories
+        });
+        
+        return result.toString();
     }
 }

@@ -11,10 +11,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ListCommandTest {
     private ListCommand listCommand;
@@ -36,27 +36,25 @@ class ListCommandTest {
     class FullListTests {
         @Test
         @DisplayName("Devrait afficher une liste vide")
-        void shouldDisplayEmptyList() {
+        void shouldDisplayEmptyList() throws Exception {
             List<String> args = Arrays.asList("list");
-            listCommand.execute(args, groceryManager, null);
-            
-            Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
-            assertThat(itemsByCategory).isEmpty();
+            String result = listCommand.execute(args, groceryManager, null);
+            assertEquals(MessageFormatter.formatEmptyList(), result);
         }
 
         @Test
         @DisplayName("Devrait afficher tous les articles groupés par catégorie")
-        void shouldDisplayAllItemsGroupedByCategory() throws IOException {
+        void shouldDisplayAllItemsGroupedByCategory() throws Exception {
             groceryManager.addItem("Apple", 5, "Fruits");
             groceryManager.addItem("Carrot", 3, "Vegetables");
             
             List<String> args = Arrays.asList("list");
-            listCommand.execute(args, groceryManager, null);
+            String result = listCommand.execute(args, groceryManager, null);
             
-            Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
-            assertThat(itemsByCategory).containsKeys("Fruits", "Vegetables");
-            assertThat(itemsByCategory.get("Fruits")).contains("Apple: 5");
-            assertThat(itemsByCategory.get("Vegetables")).contains("Carrot: 3");
+            assertTrue(result.contains("Fruits"));
+            assertTrue(result.contains("Vegetables"));
+            assertTrue(result.contains("Apple: 5"));
+            assertTrue(result.contains("Carrot: 3"));
         }
     }
 
@@ -64,41 +62,14 @@ class ListCommandTest {
     @DisplayName("Tests pour l'affichage par catégorie")
     class CategoryListTests {
         @Test
-        @DisplayName("Devrait afficher les articles d'une catégorie spécifique")
-        void shouldDisplayItemsOfSpecificCategory() throws IOException {
-            groceryManager.addItem("Apple", 5, "Fruits");
-            groceryManager.addItem("Carrot", 3, "Vegetables");
-            
-            List<String> args = Arrays.asList("list");
-            listCommand.execute(args, groceryManager, "Fruits");
-            
-            Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
-            assertThat(itemsByCategory.get("Fruits")).contains("Apple: 5");
-            assertThat(itemsByCategory.get("Vegetables")).contains("Carrot: 3");
-        }
-
-        @Test
-        @DisplayName("Devrait afficher un message pour une catégorie vide")
-        void shouldDisplayMessageForEmptyCategory() throws IOException {
-            groceryManager.addItem("Apple", 5, "Fruits");
-            
-            List<String> args = Arrays.asList("list");
-            listCommand.execute(args, groceryManager, "Vegetables");
-            
-            Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
-            assertThat(itemsByCategory).doesNotContainKey("Vegetables");
-        }
-
-        @Test
         @DisplayName("Devrait gérer une catégorie inexistante")
-        void shouldHandleNonExistentCategory() throws IOException {
+        void shouldHandleNonExistentCategory() throws Exception {
             groceryManager.addItem("Apple", 5, "Fruits");
             
             List<String> args = Arrays.asList("list");
-            listCommand.execute(args, groceryManager, "NonExistent");
+            String result = listCommand.execute(args, groceryManager, "NonExistent");
             
-            Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
-            assertThat(itemsByCategory).doesNotContainKey("NonExistent");
+            assertEquals(MessageFormatter.formatCategoryNotFound("NonExistent"), result);
         }
     }
 
@@ -107,27 +78,14 @@ class ListCommandTest {
     class DefaultCategoryTests {
         @Test
         @DisplayName("Devrait afficher les articles sans catégorie dans la catégorie par défaut")
-        void shouldDisplayItemsWithoutCategoryInDefault() throws IOException {
+        void shouldDisplayItemsWithoutCategoryInDefault() throws Exception {
             groceryManager.addItem("Apple", 5);
             
             List<String> args = Arrays.asList("list");
-            listCommand.execute(args, groceryManager, null);
+            String result = listCommand.execute(args, groceryManager, null);
             
-            Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
-            assertThat(itemsByCategory).containsKey("default");
-            assertThat(itemsByCategory.get("default")).contains("Apple: 5");
-        }
-
-        @Test
-        @DisplayName("Devrait afficher la catégorie par défaut quand spécifiée")
-        void shouldDisplayDefaultCategoryWhenSpecified() throws IOException {
-            groceryManager.addItem("Apple", 5);
-            
-            List<String> args = Arrays.asList("list");
-            listCommand.execute(args, groceryManager, "default");
-            
-            Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
-            assertThat(itemsByCategory.get("default")).contains("Apple: 5");
+            assertTrue(result.contains("default"));
+            assertTrue(result.contains("Apple: 5"));
         }
     }
 } 

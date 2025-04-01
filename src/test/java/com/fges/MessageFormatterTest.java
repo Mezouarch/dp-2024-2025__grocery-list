@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MessageFormatterTest {
 
@@ -14,15 +15,23 @@ class MessageFormatterTest {
         @Test
         @DisplayName("Devrait formater un message de confirmation d'ajout")
         void shouldFormatAddConfirmation() {
-            String message = MessageFormatter.formatAddConfirmation("Apple", 5);
-            assertThat(message).isEqualTo("5 unités de Apple ajoutées.");
+            String message = MessageFormatter.formatAddConfirmation("Apple", 5, "default");
+            assertThat(message).isEqualTo("Ajouté 5 Apple dans la catégorie 'default'");
         }
 
         @Test
         @DisplayName("Devrait gérer une quantité de 1")
         void shouldHandleSingleUnit() {
-            String message = MessageFormatter.formatAddConfirmation("Apple", 1);
-            assertThat(message).isEqualTo("1 unités de Apple ajoutées.");
+            String message = MessageFormatter.formatAddConfirmation("Apple", 1, "default");
+            assertThat(message).isEqualTo("Ajouté 1 Apple dans la catégorie 'default'");
+        }
+
+        @Test
+        public void testFormatAddConfirmation() {
+            assertEquals("Ajouté 2 pommes dans la catégorie 'default'", 
+                MessageFormatter.formatAddConfirmation("pommes", 2, "default"));
+            assertEquals("Ajouté 1 lait dans la catégorie 'default'", 
+                MessageFormatter.formatAddConfirmation("lait", 1, "default"));
         }
     }
 
@@ -33,14 +42,14 @@ class MessageFormatterTest {
         @DisplayName("Devrait formater un message de confirmation de suppression")
         void shouldFormatRemoveConfirmation() {
             String message = MessageFormatter.formatRemoveConfirmation("Apple", 5);
-            assertThat(message).isEqualTo("5 unités de Apple supprimées.");
+            assertThat(message).isEqualTo("Supprimé 5 Apple");
         }
 
         @Test
         @DisplayName("Devrait gérer une quantité de 1")
         void shouldHandleSingleUnit() {
             String message = MessageFormatter.formatRemoveConfirmation("Apple", 1);
-            assertThat(message).isEqualTo("1 unités de Apple supprimées.");
+            assertThat(message).isEqualTo("Supprimé 1 Apple");
         }
     }
 
@@ -51,7 +60,7 @@ class MessageFormatterTest {
         @DisplayName("Devrait formater un message de suppression complète")
         void shouldFormatCompleteRemoval() {
             String message = MessageFormatter.formatCompleteRemoval("Apple");
-            assertThat(message).isEqualTo("L'article Apple a été complètement supprimé.");
+            assertThat(message).isEqualTo("Supprimé Apple");
         }
     }
 
@@ -81,17 +90,17 @@ class MessageFormatterTest {
     @DisplayName("Tests pour le formatage des messages d'erreur")
     class ErrorMessageTests {
         @Test
-        @DisplayName("Devrait formater un message d'erreur pour un article inexistant")
+        @DisplayName("Devrait formater un message d'erreur pour un article non trouvé")
         void shouldFormatItemNotFound() {
             String message = MessageFormatter.formatItemNotFound("Apple");
-            assertThat(message).isEqualTo("L'article Apple n'existe pas dans la liste.");
+            assertThat(message).isEqualTo("Article non trouvé : Apple");
         }
 
         @Test
         @DisplayName("Devrait formater un message d'erreur pour une quantité invalide")
         void shouldFormatInvalidQuantity() {
             String message = MessageFormatter.formatInvalidQuantity("Apple", 3, 5);
-            assertThat(message).isEqualTo("Impossible de supprimer 5 unités de Apple. Quantité disponible: 3");
+            assertThat(message).isEqualTo("Quantité invalide pour Apple. Quantité actuelle : 3, Quantité demandée : 5");
         }
 
         @Test
