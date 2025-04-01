@@ -112,6 +112,11 @@ public class CLIHandler {
             commandName = positionalArgs.get(0);
         }
 
+        // Normaliser le nom du fichier pour le format JSON
+        if ("json".equalsIgnoreCase(format) && !fileName.toLowerCase().endsWith(".json")) {
+            fileName = fileName + ".json";
+        }
+
         // Créer le fichier s'il n'existe pas
         File file = new File(fileName);
         if (!file.exists()) {

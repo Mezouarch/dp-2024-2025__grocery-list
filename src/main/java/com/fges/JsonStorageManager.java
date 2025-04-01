@@ -69,7 +69,12 @@ public class JsonStorageManager implements StorageManager {
         for (Map.Entry<String, GroceryManager.ItemInfo> entry : groceryItems.entrySet()) {
             String itemName = entry.getKey();
             GroceryManager.ItemInfo info = entry.getValue();
-            String category = info.getCategory() != null ? info.getCategory() : "default";
+            String category = info.getCategory() != null ? info.getCategory().trim() : "default";
+            
+            // S'assurer que la catégorie n'est pas vide
+            if (category.isEmpty()) {
+                category = "default";
+            }
             
             categoryMap.computeIfAbsent(category, k -> new HashMap<>())
                       .put(itemName, Collections.singletonList(String.valueOf(info.getQuantity())));

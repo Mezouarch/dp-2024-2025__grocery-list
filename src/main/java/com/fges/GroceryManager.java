@@ -52,10 +52,30 @@ public class GroceryManager {
      */
     public void loadGroceryList(String fileName) throws IOException {
         try {
-            Map<String, Integer> loadedItems = storageManager.loadGroceryList(fileName);
-            groceryItems.clear();
-            loadedItems.forEach((itemName, quantity) -> 
-                groceryItems.put(itemName, new ItemInfo(quantity, "default")));
+            // Réinitialiser le CategoryManager
+            categoryManager = new CategoryManager();
+            
+            if (storageManager instanceof JsonStorageManager) {
+                // Utiliser la méthode spécifique pour charger avec les catégories
+                Map<String, ItemInfo> loadedItems = ((JsonStorageManager) storageManager).loadWithCategories(fileName);
+                groceryItems.clear();
+                groceryItems.putAll(loadedItems);
+                
+                // Mettre à jour le CategoryManager avec les catégories chargées
+                for (Map.Entry<String, ItemInfo> entry : loadedItems.entrySet()) {
+                    categoryManager.addItemToCategory(entry.getValue().getCategory(), entry.getKey());
+                }
+            } else {
+                // Pour les autres types de StorageManager, utiliser la méthode standard
+                Map<String, Integer> loadedItems = storageManager.loadGroceryList(fileName);
+                groceryItems.clear();
+                loadedItems.forEach((itemName, quantity) -> {
+                    ItemInfo info = new ItemInfo(quantity, "default");
+                    groceryItems.put(itemName, info);
+                    categoryManager.addItemToCategory("default", itemName);
+                });
+            }
+            currentFileName = fileName;
         } catch (IOException e) {
             // Si le fichier est vide ou corrompu, on commence avec une liste vide
             groceryItems.clear();
@@ -71,9 +91,16 @@ public class GroceryManager {
      */
     public void saveGroceryList(String fileName) throws IOException {
         InputValidator.validateFileName(fileName);
-        Map<String, Integer> itemsToSave = new HashMap<>();
-        groceryItems.forEach((name, info) -> itemsToSave.put(name, info.getQuantity()));
-        storageManager.saveGroceryList(fileName, itemsToSave);
+        if (storageManager instanceof JsonStorageManager) {
+            // Utiliser la méthode spécifique pour sauvegarder avec les catégories
+            ((JsonStorageManager) storageManager).saveWithCategories(fileName, groceryItems);
+        } else {
+            // Pour les autres types de StorageManager, utiliser la méthode standard
+            Map<String, Integer> itemsToSave = new HashMap<>();
+            groceryItems.forEach((name, info) -> itemsToSave.put(name, info.getQuantity()));
+            storageManager.saveGroceryList(fileName, itemsToSave);
+        }
+        currentFileName = fileName;
     }
 
     /**
@@ -89,19 +116,37 @@ public class GroceryManager {
         InputValidator.validateQuantity(quantity);
         
         String trimmedName = itemName.trim();
-        String itemCategory = category != null ? category : "default";
+        String itemCategory = category != null ? category.trim() : "default";
         
         // Chercher l'article existant
         ItemInfo existingItem = groceryItems.get(trimmedName);
+        
         if (existingItem != null) {
-            // Additionner la quantité tout en conservant la catégorie
+            // Article existant
+            String existingCategory = existingItem.getCategory();
             int newQuantity = existingItem.getQuantity() + quantity;
+            
+            // Si nouvel article avec catégorie spécifiée et l'article existant est dans 'default',
+            // alors mettre à jour sa catégorie
+            boolean shouldUpdateCategory = itemCategory != null && !itemCategory.equals("default") && 
+                                          "default".equals(existingCategory);
+            
             if (newQuantity <= 0) {
+                // Supprimer l'article si la quantité devient nulle ou négative
                 groceryItems.remove(trimmedName);
                 groceryMap.remove(trimmedName);
-                categoryManager.removeItemFromCategory(existingItem.getCategory(), trimmedName);
+                categoryManager.removeItemFromCategory(existingCategory, trimmedName);
             } else {
-                groceryItems.put(trimmedName, new ItemInfo(newQuantity, existingItem.getCategory()));
+                // Mettre à jour l'article
+                String categoryToUse = shouldUpdateCategory ? itemCategory : existingCategory;
+                
+                // Si la catégorie change, mettre à jour le gestionnaire de catégories
+                if (shouldUpdateCategory) {
+                    categoryManager.removeItemFromCategory(existingCategory, trimmedName);
+                    categoryManager.addItemToCategory(itemCategory, trimmedName);
+                }
+                
+                groceryItems.put(trimmedName, new ItemInfo(newQuantity, categoryToUse));
                 groceryMap.put(trimmedName, newQuantity);
             }
         } else if (quantity > 0) {
