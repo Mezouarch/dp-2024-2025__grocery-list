@@ -14,15 +14,16 @@ Dans ce TP2, on a amélioré la qualité du code en ajoutant des tests unitaires
 Pour ajouter des catégories, l'utilisateur pourrait executer les lignes suivantes:
 ```bash
 # Add milk to the "dairy" category
-java -jar ./target/dp-2024-2025__grocery-list-1.0-SNAPSHOT.jar -s my_file --category dairy add "Milk" 10
-java -jar ./target/dp-2024-2025__grocery-list-1.0-SNAPSHOT.jar -s my_file --category dairy add "Tea" 999
+java -jar ./target/dp-2024-2025__grocery-list-1.0-SNAPSHOT.jar -s my_file.json --category dairy add "Milk" 10
+java -jar ./target/dp-2024-2025__grocery-list-1.0-SNAPSHOT.jar -s my_file.json --category dairy add "Tea" 999
 
 # Add coffee without category (goes to "default")
-java -jar ./target/dp-2024-2025__grocery-list-1.0-SNAPSHOT.jar -s my_file add "Coffee" 2
+java -jar ./target/dp-2024-2025__grocery-list-1.0-SNAPSHOT.jar -s my_file.json add "Coffee" 2
 
 # List all items (grouped by category)
-java -jar ./target/dp-2024-2025__grocery-list-1.0-SNAPSHOT.jar -s my_file list
+java -jar ./target/dp-2024-2025__grocery-list-1.0-SNAPSHOT.jar -s my_file.json list
 ```
+L'utilisateur peut choisir aussi l'extention csv
 ## Problèmes identifiés dans le TP1
 
 Dans le TP1, on avait identifié plusieurs problèmes :
