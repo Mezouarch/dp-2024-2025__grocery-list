@@ -10,7 +10,7 @@ import java.util.ArrayList;
  * Cette classe centralise la gestion des catégories et leurs articles associés.
  */
 public class CategoryManager {
-    private final Map<String, List<String>> categories;
+    private final Map<String, Map<String, Integer>> categories;
 
     public CategoryManager() {
         this.categories = new HashMap<>();
@@ -21,11 +21,12 @@ public class CategoryManager {
      *
      * @param category la catégorie
      * @param item l'article à ajouter
+     * @param quantity la quantité de l'article
      */
-    public void addItemToCategory(String category, String item) {
+    public void addItemToCategory(String category, String item, int quantity) {
         String normalizedCategory = normalizeCategory(category);
-        categories.computeIfAbsent(normalizedCategory, k -> new ArrayList<>())
-                 .add(item);
+        categories.computeIfAbsent(normalizedCategory, k -> new HashMap<>())
+                 .put(item, quantity);
     }
 
     /**
@@ -54,10 +55,13 @@ public class CategoryManager {
      * Récupère tous les articles d'une catégorie.
      *
      * @param category la catégorie
-     * @return la liste des articles de la catégorie
+     * @return la liste des articles de la catégorie au format "nom: quantité"
      */
     public List<String> getItemsInCategory(String category) {
-        return categories.getOrDefault(normalizeCategory(category), new ArrayList<>());
+        List<String> result = new ArrayList<>();
+        Map<String, Integer> items = categories.getOrDefault(normalizeCategory(category), new HashMap<>());
+        items.forEach((item, quantity) -> result.add(item + ": " + quantity));
+        return result;
     }
 
     /**
@@ -65,7 +69,7 @@ public class CategoryManager {
      *
      * @return la map des catégories et leurs articles
      */
-    public Map<String, List<String>> getAllCategories() {
+    public Map<String, Map<String, Integer>> getAllCategories() {
         return new HashMap<>(categories);
     }
 
@@ -77,7 +81,7 @@ public class CategoryManager {
      */
     public void removeItemFromCategory(String category, String item) {
         String normalizedCategory = normalizeCategory(category);
-        List<String> items = categories.get(normalizedCategory);
+        Map<String, Integer> items = categories.get(normalizedCategory);
         if (items != null) {
             items.remove(item);
             // Si la catégorie est vide, la supprimer
@@ -94,7 +98,7 @@ public class CategoryManager {
      */
     public void removeCategory(String category) {
         String normalizedCategory = normalizeCategory(category);
-        List<String> items = categories.get(normalizedCategory);
+        Map<String, Integer> items = categories.get(normalizedCategory);
         if (items != null && items.isEmpty()) {
             categories.remove(normalizedCategory);
         }

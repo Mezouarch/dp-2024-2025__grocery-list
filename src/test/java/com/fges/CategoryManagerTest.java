@@ -25,27 +25,27 @@ class CategoryManagerTest {
         @Test
         @DisplayName("Devrait ajouter un article à une catégorie")
         void shouldAddItemToCategory() {
-            categoryManager.addItemToCategory("Fruits", "Apple");
+            categoryManager.addItemToCategory("Fruits", "Apple", 5);
             List<String> items = categoryManager.getItemsInCategory("Fruits");
-            assertThat(items).containsExactly("Apple");
+            assertThat(items).containsExactly("Apple: 5");
         }
 
         @Test
         @DisplayName("Devrait ajouter plusieurs articles à une catégorie")
         void shouldAddMultipleItemsToCategory() {
-            categoryManager.addItemToCategory("Fruits", "Apple");
-            categoryManager.addItemToCategory("Fruits", "Banana");
+            categoryManager.addItemToCategory("Fruits", "Apple", 5);
+            categoryManager.addItemToCategory("Fruits", "Banana", 3);
             List<String> items = categoryManager.getItemsInCategory("Fruits");
-            assertThat(items).containsExactly("Apple", "Banana");
+            assertThat(items).containsExactly("Apple: 5", "Banana: 3");
         }
 
         @Test
         @DisplayName("Devrait gérer les catégories vides ou nulles")
         void shouldHandleEmptyOrNullCategories() {
-            categoryManager.addItemToCategory("", "Apple");
-            categoryManager.addItemToCategory(null, "Banana");
+            categoryManager.addItemToCategory("", "Apple", 5);
+            categoryManager.addItemToCategory(null, "Banana", 3);
             List<String> items = categoryManager.getItemsInCategory("default");
-            assertThat(items).containsExactly("Apple", "Banana");
+            assertThat(items).containsExactly("Apple: 5", "Banana: 3");
         }
     }
 
@@ -55,19 +55,19 @@ class CategoryManagerTest {
         @Test
         @DisplayName("Devrait supprimer une catégorie vide")
         void shouldRemoveEmptyCategory() {
-            categoryManager.addItemToCategory("Fruits", "Apple");
+            categoryManager.addItemToCategory("Fruits", "Apple", 5);
             categoryManager.removeItemFromCategory("Fruits", "Apple");
-            Map<String, List<String>> allCategories = categoryManager.getAllCategories();
+            Map<String, Map<String, Integer>> allCategories = categoryManager.getAllCategories();
             assertThat(allCategories).doesNotContainKey("Fruits");
         }
 
         @Test
         @DisplayName("Devrait gérer la suppression d'un article inexistant")
         void shouldHandleRemovingNonExistentItem() {
-            categoryManager.addItemToCategory("Fruits", "Apple");
+            categoryManager.addItemToCategory("Fruits", "Apple", 5);
             categoryManager.removeItemFromCategory("Fruits", "Banana");
             List<String> items = categoryManager.getItemsInCategory("Fruits");
-            assertThat(items).containsExactly("Apple");
+            assertThat(items).containsExactly("Apple: 5");
         }
     }
 
@@ -77,10 +77,12 @@ class CategoryManagerTest {
         @Test
         @DisplayName("Devrait récupérer toutes les catégories")
         void shouldGetAllCategories() {
-            categoryManager.addItemToCategory("Fruits", "Apple");
-            categoryManager.addItemToCategory("Vegetables", "Carrot");
-            Map<String, List<String>> allCategories = categoryManager.getAllCategories();
+            categoryManager.addItemToCategory("Fruits", "Apple", 5);
+            categoryManager.addItemToCategory("Vegetables", "Carrot", 3);
+            Map<String, Map<String, Integer>> allCategories = categoryManager.getAllCategories();
             assertThat(allCategories).containsKeys("Fruits", "Vegetables");
+            assertThat(allCategories.get("Fruits")).containsEntry("Apple", 5);
+            assertThat(allCategories.get("Vegetables")).containsEntry("Carrot", 3);
         }
 
         @Test
@@ -93,7 +95,7 @@ class CategoryManagerTest {
         @Test
         @DisplayName("Devrait vérifier l'existence d'une catégorie")
         void shouldCheckCategoryExistence() {
-            categoryManager.addItemToCategory("Fruits", "Apple");
+            categoryManager.addItemToCategory("Fruits", "Apple", 5);
             assertThat(categoryManager.categoryExists("Fruits")).isTrue();
             assertThat(categoryManager.categoryExists("NonExistent")).isFalse();
         }

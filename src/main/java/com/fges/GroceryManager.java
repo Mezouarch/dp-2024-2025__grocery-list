@@ -63,7 +63,7 @@ public class GroceryManager {
                 
                 // Mettre à jour le CategoryManager avec les catégories chargées
                 for (Map.Entry<String, ItemInfo> entry : loadedItems.entrySet()) {
-                    categoryManager.addItemToCategory(entry.getValue().getCategory(), entry.getKey());
+                    categoryManager.addItemToCategory(entry.getValue().getCategory(), entry.getKey(), entry.getValue().getQuantity());
                 }
             } else {
                 // Pour les autres types de StorageManager, utiliser la méthode standard
@@ -72,7 +72,7 @@ public class GroceryManager {
                 loadedItems.forEach((itemName, quantity) -> {
                     ItemInfo info = new ItemInfo(quantity, "default");
                     groceryItems.put(itemName, info);
-                    categoryManager.addItemToCategory("default", itemName);
+                    categoryManager.addItemToCategory("default", itemName, quantity);
                 });
             }
             currentFileName = fileName;
@@ -143,7 +143,10 @@ public class GroceryManager {
                 // Si la catégorie change, mettre à jour le gestionnaire de catégories
                 if (shouldUpdateCategory) {
                     categoryManager.removeItemFromCategory(existingCategory, trimmedName);
-                    categoryManager.addItemToCategory(itemCategory, trimmedName);
+                    categoryManager.addItemToCategory(itemCategory, trimmedName, newQuantity);
+                } else {
+                    // Mettre à jour la quantité dans la catégorie existante
+                    categoryManager.addItemToCategory(existingCategory, trimmedName, newQuantity);
                 }
                 
                 groceryItems.put(trimmedName, new ItemInfo(newQuantity, categoryToUse));
@@ -153,7 +156,7 @@ public class GroceryManager {
             // Nouvel article
             groceryItems.put(trimmedName, new ItemInfo(quantity, itemCategory));
             groceryMap.put(trimmedName, quantity);
-            categoryManager.addItemToCategory(itemCategory, trimmedName);
+            categoryManager.addItemToCategory(itemCategory, trimmedName, quantity);
         }
         
         saveIfFileNameExists();
