@@ -31,7 +31,33 @@ public class CLIHandler {
         CommandLineParser parser = new DefaultParser();
 
         CommandLine cmd = parser.parse(cliOptions, args);
+
+        // Traiter les arguments positionnels
+        List<String> positionalArgs = cmd.getArgList();
+        if (positionalArgs.isEmpty()) {
+            System.err.println("Commande manquante.");
+            return 1;
+        }
+
+        // Si la commande est "info", on l'exécute directement sans vérifier les autres options
+        if ("info".equals(positionalArgs.get(0).toLowerCase())) {
+            try {
+                InfoCommand infoCommand = new InfoCommand();
+                String result = infoCommand.execute(positionalArgs, null, null);
+                System.out.println(result);
+                return 0;
+            } catch (Exception e) {
+                System.err.println("Erreur lors de l'exécution de la commande info : " + e.getMessage());
+                return 1;
+            }
+        }
+
+        // Pour les autres commandes, on vérifie le fichier source
         String fileName = cmd.getOptionValue("source");
+        if (fileName == null) {
+            System.err.println("L'option --source est requise pour cette commande.");
+            return 1;
+        }
 
         // Traiter le format de fichier
         String format = processFormatOption(cmd);
@@ -41,13 +67,6 @@ public class CLIHandler {
         
         // Récupérer la catégorie si elle est spécifiée
         String category = cmd.getOptionValue("category");
-
-        // Traiter les arguments positionnels
-        List<String> positionalArgs = cmd.getArgList();
-        if (positionalArgs.isEmpty()) {
-            System.err.println("Commande manquante.");
-            return 1;
-        }
 
         // Exécuter la commande
         return executeCommand(positionalArgs, fileName, format, category);
@@ -62,10 +81,10 @@ public class CLIHandler {
         Options cliOptions = new Options();
 
         // Options existantes
-        cliOptions.addRequiredOption("s", "source", true, "Fichier contenant la liste de courses");
+        cliOptions.addOption("s", "source", true, "Fichier contenant la liste de courses");
         cliOptions.addOption("f", "format", true, "Format de fichier (json ou csv)");
 
-        // Nouvelle option pour la catégorie
+        // Option pour la catégorie
         cliOptions.addOption("c", "category", true, "Catégorie de l'article");
         
         return cliOptions;
@@ -173,6 +192,7 @@ public class CLIHandler {
             case "add" -> Optional.of(new AddCommand());
             case "remove" -> Optional.of(new RemoveCommand());
             case "list" -> Optional.of(new ListCommand());
+            case "info" -> Optional.of(new InfoCommand());
             default -> Optional.empty();
         };
     }
