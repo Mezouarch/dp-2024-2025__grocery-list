@@ -62,3 +62,9 @@ La commande info fonctionne correctement et de manière robuste
 Elle est intégrée dans la logique des autres commandes sans conflit
 
 Le code reste modulaire et extensible
+
+# Schema 
+
+Voici le schema du système :
+
+![Diagramme info](schema_tp3.png)
