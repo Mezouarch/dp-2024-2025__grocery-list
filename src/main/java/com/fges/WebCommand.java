@@ -2,11 +2,13 @@ package com.fges;
 
 import java.util.List;
 import java.util.Map;
+import java.io.IOException;
 
 import fr.anthonyquere.GroceryShopServer;
+import fr.anthonyquere.MyGroceryShop;
 
 /**
- * Commande pour démarrer le serveur web.
+ * Commande pour démarrer le serveur web avec synchronisation des modifications.
  */
 public class WebCommand implements Command {
 
@@ -29,13 +31,13 @@ public class WebCommand implements Command {
         }
 
         try {
-            // Créer une instance de SimpleGroceryShop avec les données de GroceryManager
-            SimpleGroceryShop groceryShop = new SimpleGroceryShop();
+            // Créer une instance de SimpleGroceryShop avec synchronisation
+            SynchronizedGroceryShop groceryShop = new SynchronizedGroceryShop(groceryManager);
             
             // Récupérer les articles par catégorie
             Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
             
-            // Parcourir les articles et les ajouter au SimpleGroceryShop
+            // Parcourir les articles et les ajouter au SynchronizedGroceryShop
             for (Map.Entry<String, List<String>> categoryEntry : itemsByCategory.entrySet()) {
                 String categoryName = categoryEntry.getKey();
                 List<String> items = categoryEntry.getValue();
@@ -47,8 +49,10 @@ public class WebCommand implements Command {
                         String itemName = parts[0].trim();
                         int quantity = Integer.parseInt(parts[1].trim());
                         
-                        // Ajouter l'article au SimpleGroceryShop
-                        groceryShop.addGroceryItem(itemName, quantity, categoryName);
+                        // Ajouter l'article au SynchronizedGroceryShop
+                        // Note: Ces articles sont déjà dans le GroceryManager, donc nous utilisons la méthode
+                        // qui n'effectue pas de synchronisation pour éviter les doublons
+                        groceryShop.addItemWithoutSync(itemName, quantity, categoryName);
                     }
                 }
             }
@@ -57,7 +61,7 @@ public class WebCommand implements Command {
             GroceryShopServer server = new GroceryShopServer(groceryShop);
             server.start(port);
             
-            return "Serveur web démarré sur http://localhost:" + port;
+            return "Serveur web démarré sur http://localhost:" + port + " (avec synchronisation des modifications)";
 
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors du démarrage du serveur web: " + e.getMessage(), e);
