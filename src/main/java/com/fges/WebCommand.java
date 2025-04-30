@@ -2,9 +2,8 @@ package com.fges;
 
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
+
 import fr.anthonyquere.GroceryShopServer;
-import fr.anthonyquere.MyGroceryShop;
 
 /**
  * Commande pour démarrer le serveur web.

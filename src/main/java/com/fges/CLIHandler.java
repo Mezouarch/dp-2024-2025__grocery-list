@@ -39,26 +39,18 @@ public class CLIHandler {
             return 1;
         }
 
-        // Si la commande est "info", on l'exécute directement sans vérifier les autres options
-        if ("info".equals(positionalArgs.get(0).toLowerCase())) {
-            try {
-                InfoCommand infoCommand = new InfoCommand();
-                String result = infoCommand.execute(positionalArgs, null, null);
-                System.out.println(result);
-                return 0;
-            } catch (Exception e) {
-                System.err.println("Erreur lors de l'exécution de la commande info : " + e.getMessage());
-                return 1;
-            }
-        }
-
-        // Pour les autres commandes, on vérifie le fichier source
+        String commandName = positionalArgs.get(0); // <== récupérer ici la commande
+        
+        // Pour toutes les commandes sauf "info", vérifier le fichier source
         String fileName = cmd.getOptionValue("source");
-        if (fileName == null) {
+        if (fileName == null && !"info".equals(commandName)) {
             System.err.println("L'option --source est requise pour cette commande.");
             return 1;
         }
 
+        // Pour la commande info, on accepte qu'il n'y ait pas de fichier source
+        // mais on continue le flux normal d'exécution
+        
         // Traiter le format de fichier
         String format = processFormatOption(cmd);
         if (format == null) {
@@ -109,8 +101,8 @@ public class CLIHandler {
      * Exécute la commande appropriée.
      *
      * @param positionalArgs les arguments positionnels
-     * @param fileName le nom du fichier de données
-     * @param format le format de stockage
+     * @param fileName le nom du fichier de données (peut être null pour la commande "info")
+     * @param format le format de stockage (peut être null pour la commande "info")
      * @param category la catégorie de l'article (peut être null)
      * @return 0 en cas de succès, 1 en cas d'erreur
      * @throws IOException en cas d'erreur d'accès aux fichiers
@@ -131,34 +123,52 @@ public class CLIHandler {
             commandName = positionalArgs.get(0);
         }
 
-        // Normaliser le nom du fichier pour le format JSON
-        if ("json".equalsIgnoreCase(format) && !fileName.toLowerCase().endsWith(".json")) {
-            fileName = fileName + ".json";
+        // Pour les commandes autres que info, on vérifie que le fichier est bien spécifié
+        if (fileName == null && !"info".equals(commandName)) {
+            System.err.println("Fichier source requis pour cette commande.");
+            return 1;
         }
 
-        // Créer le fichier s'il n'existe pas
-        File file = new File(fileName);
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                System.err.println("Erreur lors de la création du fichier : " + fileName);
-                return 1;
+        // Pour les commandes autres que info, on gère le fichier
+        if (!"info".equals(commandName) && fileName != null) {
+            // Normaliser le nom du fichier pour le format JSON
+            if ("json".equalsIgnoreCase(format) && !fileName.toLowerCase().endsWith(".json")) {
+                fileName = fileName + ".json";
+            }
+
+            // Créer le fichier s'il n'existe pas
+            File file = new File(fileName);
+            if (!file.exists()) {
+                try {
+                    file.createNewFile();
+                } catch (IOException e) {
+                    System.err.println("Erreur lors de la création du fichier : " + fileName);
+                    return 1;
+                }
             }
         }
 
-        // Créer le gestionnaire de stockage approprié
-        StorageManager storageManager = StorageManagerFactory.createStorageManager(format);
-
-        // Gestionnaire de la liste de courses
-        GroceryManager groceryManager = new GroceryManager(storageManager);
+        // Initialiser les gestionnaires de données
+        StorageManager storageManager = null;
+        GroceryManager groceryManager = null;
         
-        // Charger la liste existante
-        try {
-            groceryManager.loadGroceryList(fileName);
-        } catch (IOException e) {
-            // Si le fichier est vide ou corrompu, on continue avec une liste vide
-            System.err.println("Attention : Le fichier " + fileName + " est vide ou corrompu. Une nouvelle liste sera créée.");
+        // Pour les commandes autres que info, on initialise les gestionnaires
+        if (!"info".equals(commandName)) {
+            // Créer le gestionnaire de stockage approprié
+            storageManager = StorageManagerFactory.createStorageManager(format);
+            
+            // Gestionnaire de la liste de courses
+            groceryManager = new GroceryManager(storageManager);
+            
+            // Charger la liste existante si le fichier est spécifié
+            if (fileName != null) {
+                try {
+                    groceryManager.loadGroceryList(fileName);
+                } catch (IOException e) {
+                    // Si le fichier est vide ou corrompu, on continue avec une liste vide
+                    System.err.println("Attention : Le fichier " + fileName + " est vide ou corrompu. Une nouvelle liste sera créée.");
+                }
+            }
         }
 
         // Exécution de la commande
@@ -168,8 +178,21 @@ public class CLIHandler {
                 String result = command.get().execute(positionalArgs, groceryManager, category);
                 System.out.println(result);
                 
-                // Sauvegarder la liste après chaque commande
-                groceryManager.saveGroceryList(fileName);
+                // Sauvegarder la liste après chaque commande (sauf pour info et web)
+                if (!"info".equals(commandName) && !"web".equals(commandName) && groceryManager != null && fileName != null) {
+                    groceryManager.saveGroceryList(fileName);
+                }
+                
+                // Pour la commande web, on maintient le programme en vie
+                if ("web".equals(commandName)) {
+                    // Attente indéfinie pour maintenir le serveur web en vie
+                    try {
+                        Thread.currentThread().join();
+                    } catch (InterruptedException e) {
+                        System.err.println("Serveur web interrompu: " + e.getMessage());
+                    }
+                }
+                
                 return 0;
             } catch (Exception e) {
                 System.err.println("Erreur lors de l'exécution de la commande : " + e.getMessage());
@@ -193,6 +216,7 @@ public class CLIHandler {
             case "remove" -> Optional.of(new RemoveCommand());
             case "list" -> Optional.of(new ListCommand());
             case "info" -> Optional.of(new InfoCommand());
+            case "web" -> Optional.of(new WebCommand());
             default -> Optional.empty();
         };
     }
