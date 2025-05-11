@@ -1,127 +1,101 @@
 package com.fges;
 
+import com.fges.util.MessageFormatter;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MessageFormatterTest {
 
     @Nested
-    @DisplayName("Tests pour le formatage des messages de confirmation d'ajout")
-    class AddConfirmationTests {
+    @DisplayName("Tests pour les messages de liste")
+    class ListMessagesTests {
         @Test
-        @DisplayName("Devrait formater un message de confirmation d'ajout")
-        void shouldFormatAddConfirmation() {
-            String message = MessageFormatter.formatAddConfirmation("Apple", 5, "default");
-            assertThat(message).isEqualTo("Ajouté 5 Apple dans la catégorie 'default'");
-        }
-
-        @Test
-        @DisplayName("Devrait gérer une quantité de 1")
-        void shouldHandleSingleUnit() {
-            String message = MessageFormatter.formatAddConfirmation("Apple", 1, "default");
-            assertThat(message).isEqualTo("Ajouté 1 Apple dans la catégorie 'default'");
-        }
-
-        @Test
-        public void testFormatAddConfirmation() {
-            assertEquals("Ajouté 2 pommes dans la catégorie 'default'", 
-                MessageFormatter.formatAddConfirmation("pommes", 2, "default"));
-            assertEquals("Ajouté 1 lait dans la catégorie 'default'", 
-                MessageFormatter.formatAddConfirmation("lait", 1, "default"));
-        }
-    }
-
-    @Nested
-    @DisplayName("Tests pour le formatage des messages de confirmation de suppression")
-    class RemoveConfirmationTests {
-        @Test
-        @DisplayName("Devrait formater un message de confirmation de suppression")
-        void shouldFormatRemoveConfirmation() {
-            String message = MessageFormatter.formatRemoveConfirmation("Apple", 5);
-            assertThat(message).isEqualTo("Supprimé 5 Apple");
-        }
-
-        @Test
-        @DisplayName("Devrait gérer une quantité de 1")
-        void shouldHandleSingleUnit() {
-            String message = MessageFormatter.formatRemoveConfirmation("Apple", 1);
-            assertThat(message).isEqualTo("Supprimé 1 Apple");
-        }
-    }
-
-    @Nested
-    @DisplayName("Tests pour le formatage des messages de suppression complète")
-    class CompleteRemovalTests {
-        @Test
-        @DisplayName("Devrait formater un message de suppression complète")
-        void shouldFormatCompleteRemoval() {
-            String message = MessageFormatter.formatCompleteRemoval("Apple");
-            assertThat(message).isEqualTo("Supprimé Apple");
-        }
-    }
-
-    @Nested
-    @DisplayName("Tests pour le formatage des messages de liste vide")
-    class EmptyListTests {
-        @Test
-        @DisplayName("Devrait formater un message de liste vide")
-        void shouldFormatEmptyList() {
+        @DisplayName("Devrait formater un message pour une liste vide")
+        void shouldFormatEmptyListMessage() {
             String message = MessageFormatter.formatEmptyList();
-            assertThat(message).isEqualTo("La liste de courses est vide.");
+            assertEquals("La liste de courses est vide.", message);
         }
-    }
 
-    @Nested
-    @DisplayName("Tests pour le formatage des messages de catégorie vide")
-    class EmptyCategoryTests {
         @Test
-        @DisplayName("Devrait formater un message de catégorie vide")
-        void shouldFormatEmptyCategory() {
+        @DisplayName("Devrait formater un en-tête de catégorie")
+        void shouldFormatCategoryHeader() {
+            String message = MessageFormatter.formatCategoryHeader("Fruits");
+            assertEquals("# Fruits:", message);
+        }
+
+        @Test
+        @DisplayName("Devrait formater un message pour une catégorie vide")
+        void shouldFormatEmptyCategoryMessage() {
             String message = MessageFormatter.formatEmptyCategory("Fruits");
-            assertThat(message).isEqualTo("Aucun article dans la catégorie: Fruits");
+            assertEquals("Aucun article dans la catégorie: Fruits", message);
+        }
+
+        @Test
+        @DisplayName("Devrait formater un message pour une catégorie non trouvée")
+        void shouldFormatCategoryNotFoundMessage() {
+            String message = MessageFormatter.formatCategoryNotFound("Inconnu");
+            assertEquals("Catégorie non trouvée : Inconnu", message);
         }
     }
 
     @Nested
-    @DisplayName("Tests pour le formatage des messages d'erreur")
-    class ErrorMessageTests {
+    @DisplayName("Tests pour les messages d'article")
+    class ItemMessagesTests {
         @Test
-        @DisplayName("Devrait formater un message d'erreur pour un article non trouvé")
-        void shouldFormatItemNotFound() {
-            String message = MessageFormatter.formatItemNotFound("Apple");
-            assertThat(message).isEqualTo("Article non trouvé : Apple");
+        @DisplayName("Devrait formater un message pour un article non trouvé")
+        void shouldFormatItemNotFoundMessage() {
+            String message = MessageFormatter.formatItemNotFound("Pomme");
+            assertEquals("Article non trouvé : Pomme", message);
         }
 
         @Test
-        @DisplayName("Devrait formater un message d'erreur pour une quantité invalide")
-        void shouldFormatInvalidQuantity() {
-            String message = MessageFormatter.formatInvalidQuantity("Apple", 3, 5);
-            assertThat(message).isEqualTo("Quantité invalide pour Apple. Quantité actuelle : 3, Quantité demandée : 5");
+        @DisplayName("Devrait formater un message pour l'ajout d'un article")
+        void shouldFormatItemAddedMessage() {
+            String message = MessageFormatter.formatAddConfirmation("Pomme", 3, "Fruits");
+            assertEquals("Ajouté 3 Pomme dans la catégorie 'Fruits'", message);
         }
 
         @Test
-        @DisplayName("Devrait formater un message d'erreur pour un format de stockage invalide")
-        void shouldFormatInvalidStorageFormat() {
+        @DisplayName("Devrait formater un message pour la suppression d'un article")
+        void shouldFormatItemRemovedMessage() {
+            String message = MessageFormatter.formatCompleteRemoval("Pomme");
+            assertEquals("Supprimé Pomme", message);
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests pour les messages d'erreur")
+    class ErrorMessagesTests {
+        @Test
+        @DisplayName("Devrait formater un message pour un format de stockage invalide")
+        void shouldFormatInvalidStorageFormatMessage() {
             String message = MessageFormatter.formatInvalidStorageFormat();
-            assertThat(message).isEqualTo("Format de stockage non supporté. Utilisez 'json' ou 'csv'.");
+            assertEquals("Format de stockage non supporté. Utilisez 'json' ou 'csv'.", message);
         }
 
         @Test
-        @DisplayName("Devrait formater un message d'erreur pour un fichier manquant")
-        void shouldFormatFileNotFound() {
-            String message = MessageFormatter.formatFileNotFound("grocery_list.json");
-            assertThat(message).isEqualTo("Le fichier grocery_list.json n'existe pas.");
+        @DisplayName("Devrait formater un message pour un fichier non trouvé")
+        void shouldFormatFileNotFoundMessage() {
+            String message = MessageFormatter.formatFileNotFound("list.json");
+            assertEquals("Le fichier list.json n'existe pas.", message);
         }
-
+        
         @Test
-        @DisplayName("Devrait formater un message d'erreur pour une commande inconnue")
-        void shouldFormatUnknownCommand() {
+        @DisplayName("Devrait formater un message pour une commande inconnue")
+        void shouldFormatUnknownCommandMessage() {
             String message = MessageFormatter.formatUnknownCommand("unknown");
-            assertThat(message).isEqualTo("Commande inconnue : unknown");
+            assertEquals("Commande inconnue : unknown", message);
+        }
+        
+        @Test
+        @DisplayName("Devrait formater un message pour une quantité invalide")
+        void shouldFormatInvalidQuantityMessage() {
+            String message = MessageFormatter.formatInvalidQuantity("Pomme", 2, 3);
+            assertEquals("Quantité invalide pour Pomme. Quantité actuelle : 2, Quantité demandée : 3", message);
         }
     }
 } 

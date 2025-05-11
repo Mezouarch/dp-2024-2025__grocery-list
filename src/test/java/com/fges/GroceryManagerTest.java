@@ -1,5 +1,11 @@
 package com.fges;
 
+import com.fges.model.GroceryItem;
+import com.fges.model.GroceryManager;
+import com.fges.storage.JsonStorageManager;
+import com.fges.storage.StorageManager;
+import com.fges.util.MessageFormatter;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,18 +20,21 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
 class GroceryManagerTest {
     private GroceryManager groceryManager;
-    private JsonStorageManager storageManager;
+    private StorageManager storageManager;
+    
     @TempDir
     Path tempDir;
+    private File testFile;
 
     @BeforeEach
     void setUp() throws IOException {
         storageManager = new JsonStorageManager();
         groceryManager = new GroceryManager(storageManager);
-        File testFile = tempDir.resolve("test_grocery_list.json").toFile();
+        testFile = tempDir.resolve("test_grocery_list.json").toFile();
         TestUtils.createEmptyJsonFile(testFile);
         groceryManager.loadGroceryList(testFile.getPath());
     }
@@ -88,7 +97,7 @@ class GroceryManagerTest {
         void shouldRejectRemovingNonExistentItem() {
             assertThatThrownBy(() -> groceryManager.removeItem("Apple"))
                 .isInstanceOf(Exception.class)
-                .hasMessage(MessageFormatter.formatItemNotFound("Apple"));
+                .hasMessage("Article non trouvé : Apple");
         }
     }
 
@@ -106,7 +115,7 @@ class GroceryManagerTest {
         @Test
         @DisplayName("Devrait utiliser la catégorie par défaut si aucune n'est spécifiée")
         void shouldUseDefaultCategoryWhenNoneSpecified() throws Exception {
-            groceryManager.addItem("Apple", 5);
+            groceryManager.addItem("Apple", 5, null);
             assertThat(groceryManager.categoryExists("default")).isTrue();
             assertThat(groceryManager.getItemsInCategory("default")).contains("Apple: 5");
         }
@@ -141,5 +150,68 @@ class GroceryManagerTest {
             Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
             assertThat(itemsByCategory).isEmpty();
         }
+    }
+
+    @Test
+    void shouldSaveAndLoadGroceryList() throws Exception {
+        // Arrange
+        groceryManager.addItem("apple", 5, "fruits");
+        groceryManager.addItem("carrot", 3, "vegetables");
+        
+        // Act
+        groceryManager.saveGroceryList(testFile.getPath());
+        GroceryManager newManager = new GroceryManager(storageManager);
+        newManager.loadGroceryList(testFile.getPath());
+        
+        // Assert
+        assertTrue(newManager.doesItemExist("apple"));
+        assertTrue(newManager.doesItemExist("carrot"));
+        assertEquals(5, newManager.getItemQuantity("apple"));
+        assertEquals(3, newManager.getItemQuantity("carrot"));
+    }
+    
+    @Test
+    void shouldGetGroceryListByCategory() throws Exception {
+        // Arrange
+        groceryManager.addItem("apple", 5, "fruits");
+        groceryManager.addItem("banana", 2, "fruits");
+        groceryManager.addItem("carrot", 3, "vegetables");
+        
+        // Act
+        Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
+        
+        // Assert
+        assertTrue(itemsByCategory.containsKey("fruits"));
+        assertTrue(itemsByCategory.containsKey("vegetables"));
+        assertEquals(2, itemsByCategory.get("fruits").size());
+        assertEquals(1, itemsByCategory.get("vegetables").size());
+    }
+    
+    @Test
+    void shouldGetItemsInCategory() throws Exception {
+        // Arrange
+        groceryManager.addItem("apple", 5, "fruits");
+        groceryManager.addItem("banana", 2, "fruits");
+        
+        // Act
+        List<String> items = groceryManager.getItemsInCategory("fruits");
+        
+        // Assert
+        assertEquals(2, items.size());
+        assertTrue(items.contains("apple: 5"));
+        assertTrue(items.contains("banana: 2"));
+    }
+    
+    @Test
+    void shouldGetAllItems() throws Exception {
+        // Arrange
+        groceryManager.addItem("apple", 5, "fruits");
+        groceryManager.addItem("carrot", 3, "vegetables");
+        
+        // Act
+        List<GroceryItem> items = groceryManager.getItems();
+        
+        // Assert
+        assertEquals(2, items.size());
     }
 } 

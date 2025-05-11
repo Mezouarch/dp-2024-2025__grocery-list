@@ -1,4 +1,4 @@
-package com.fges;
+package com.fges.util;
 
 import java.util.List;
 import java.util.Map;

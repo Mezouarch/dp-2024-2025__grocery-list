@@ -1,12 +1,19 @@
-package com.fges;
+package com.fges.commands;
+
+import com.fges.Command;
+import com.fges.model.GroceryManager;
+import com.fges.model.CommandOptions;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+/**
+ * Commande qui affiche des informations système.
+ */
 public class InfoCommand implements Command {
     @Override
-    public String execute(List<String> args, GroceryManager groceryManager, String category) throws Exception {
+    public String execute(List<String> args, GroceryManager groceryManager, CommandOptions options) throws Exception {
         // Get today's date
         LocalDate today = LocalDate.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");

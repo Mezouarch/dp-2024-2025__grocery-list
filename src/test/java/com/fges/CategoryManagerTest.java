@@ -1,103 +1,121 @@
 package com.fges;
 
+import com.fges.model.CategoryManager;
+
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Nested;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
 class CategoryManagerTest {
+    
     private CategoryManager categoryManager;
-
+    
     @BeforeEach
     void setUp() {
         categoryManager = new CategoryManager();
     }
-
-    @Nested
-    @DisplayName("Tests pour l'ajout d'articles")
-    class AddItemTests {
-        @Test
-        @DisplayName("Devrait ajouter un article à une catégorie")
-        void shouldAddItemToCategory() {
-            categoryManager.addItemToCategory("Fruits", "Apple", 5);
-            List<String> items = categoryManager.getItemsInCategory("Fruits");
-            assertThat(items).containsExactly("Apple: 5");
-        }
-
-        @Test
-        @DisplayName("Devrait ajouter plusieurs articles à une catégorie")
-        void shouldAddMultipleItemsToCategory() {
-            categoryManager.addItemToCategory("Fruits", "Apple", 5);
-            categoryManager.addItemToCategory("Fruits", "Banana", 3);
-            List<String> items = categoryManager.getItemsInCategory("Fruits");
-            assertThat(items).containsExactly("Apple: 5", "Banana: 3");
-        }
-
-        @Test
-        @DisplayName("Devrait gérer les catégories vides ou nulles")
-        void shouldHandleEmptyOrNullCategories() {
-            categoryManager.addItemToCategory("", "Apple", 5);
-            categoryManager.addItemToCategory(null, "Banana", 3);
-            List<String> items = categoryManager.getItemsInCategory("default");
-            assertThat(items).containsExactly("Apple: 5", "Banana: 3");
-        }
+    
+    @Test
+    void shouldAddItemToCategory() {
+        // Arrange
+        String itemName = "apple";
+        String category = "fruits";
+        
+        // Act
+        categoryManager.addItemToCategory(itemName, category);
+        
+        // Assert
+        assertTrue(categoryManager.containsItem(itemName));
+        assertEquals(category, categoryManager.getItemCategory(itemName));
+        assertTrue(categoryManager.getItemsInCategory(category).contains(itemName));
     }
-
-    @Nested
-    @DisplayName("Tests pour la suppression d'articles")
-    class RemoveItemTests {
-        @Test
-        @DisplayName("Devrait supprimer une catégorie vide")
-        void shouldRemoveEmptyCategory() {
-            categoryManager.addItemToCategory("Fruits", "Apple", 5);
-            categoryManager.removeItemFromCategory("Fruits", "Apple");
-            Map<String, Map<String, Integer>> allCategories = categoryManager.getAllCategories();
-            assertThat(allCategories).doesNotContainKey("Fruits");
-        }
-
-        @Test
-        @DisplayName("Devrait gérer la suppression d'un article inexistant")
-        void shouldHandleRemovingNonExistentItem() {
-            categoryManager.addItemToCategory("Fruits", "Apple", 5);
-            categoryManager.removeItemFromCategory("Fruits", "Banana");
-            List<String> items = categoryManager.getItemsInCategory("Fruits");
-            assertThat(items).containsExactly("Apple: 5");
-        }
+    
+    @Test
+    void shouldUseDefaultCategoryWhenCategoryIsNull() {
+        // Arrange
+        String itemName = "apple";
+        
+        // Act
+        categoryManager.addItemToCategory(itemName, null);
+        
+        // Assert
+        assertEquals("default", categoryManager.getItemCategory(itemName));
+        assertTrue(categoryManager.getItemsInCategory("default").contains(itemName));
     }
-
-    @Nested
-    @DisplayName("Tests pour la récupération des catégories")
-    class GetCategoriesTests {
-        @Test
-        @DisplayName("Devrait récupérer toutes les catégories")
-        void shouldGetAllCategories() {
-            categoryManager.addItemToCategory("Fruits", "Apple", 5);
-            categoryManager.addItemToCategory("Vegetables", "Carrot", 3);
-            Map<String, Map<String, Integer>> allCategories = categoryManager.getAllCategories();
-            assertThat(allCategories).containsKeys("Fruits", "Vegetables");
-            assertThat(allCategories.get("Fruits")).containsEntry("Apple", 5);
-            assertThat(allCategories.get("Vegetables")).containsEntry("Carrot", 3);
-        }
-
-        @Test
-        @DisplayName("Devrait retourner une liste vide pour une catégorie inexistante")
-        void shouldReturnEmptyListForNonExistentCategory() {
-            List<String> items = categoryManager.getItemsInCategory("NonExistent");
-            assertThat(items).isEmpty();
-        }
-
-        @Test
-        @DisplayName("Devrait vérifier l'existence d'une catégorie")
-        void shouldCheckCategoryExistence() {
-            categoryManager.addItemToCategory("Fruits", "Apple", 5);
-            assertThat(categoryManager.categoryExists("Fruits")).isTrue();
-            assertThat(categoryManager.categoryExists("NonExistent")).isFalse();
-        }
+    
+    @Test
+    void shouldUseDefaultCategoryWhenCategoryIsEmpty() {
+        // Arrange
+        String itemName = "apple";
+        
+        // Act
+        categoryManager.addItemToCategory(itemName, "");
+        
+        // Assert
+        assertEquals("default", categoryManager.getItemCategory(itemName));
+        assertTrue(categoryManager.getItemsInCategory("default").contains(itemName));
+    }
+    
+    @Test
+    void shouldMoveItemToNewCategory() {
+        // Arrange
+        String itemName = "apple";
+        String oldCategory = "fruits";
+        String newCategory = "food";
+        
+        // Act
+        categoryManager.addItemToCategory(itemName, oldCategory);
+        categoryManager.addItemToCategory(itemName, newCategory);
+        
+        // Assert
+        assertEquals(newCategory, categoryManager.getItemCategory(itemName));
+        assertFalse(categoryManager.getItemsInCategory(oldCategory).contains(itemName));
+        assertTrue(categoryManager.getItemsInCategory(newCategory).contains(itemName));
+    }
+    
+    @Test
+    void shouldRemoveItem() {
+        // Arrange
+        String itemName = "apple";
+        String category = "fruits";
+        categoryManager.addItemToCategory(itemName, category);
+        
+        // Act
+        categoryManager.removeItem(itemName);
+        
+        // Assert
+        assertFalse(categoryManager.containsItem(itemName));
+        assertFalse(categoryManager.getItemsInCategory(category).contains(itemName));
+    }
+    
+    @Test
+    void shouldCheckIfCategoryExists() {
+        // Arrange
+        String category = "fruits";
+        categoryManager.addItemToCategory("apple", category);
+        
+        // Assert
+        assertTrue(categoryManager.categoryExists(category));
+        assertFalse(categoryManager.categoryExists("nonexistent"));
+    }
+    
+    @Test
+    void shouldGetAllCategories() {
+        // Arrange
+        categoryManager.addItemToCategory("apple", "fruits");
+        categoryManager.addItemToCategory("carrot", "vegetables");
+        
+        // Act
+        Map<String, Set<String>> allCategories = categoryManager.getAllCategories();
+        
+        // Assert
+        assertTrue(allCategories.containsKey("fruits"));
+        assertTrue(allCategories.containsKey("vegetables"));
+        assertTrue(allCategories.containsKey("default"));
     }
 } 

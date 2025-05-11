@@ -1,11 +1,15 @@
-package com.fges;
+package com.fges.web;
+
+import com.fges.model.GroceryManager;
+import com.fges.model.WebGroceryItem;
+
+import fr.anthonyquere.MyGroceryShop;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-
-import fr.anthonyquere.MyGroceryShop;
+import java.util.Map;
 
 /**
  * Implémentation de MyGroceryShop qui synchronise les modifications
@@ -15,8 +19,41 @@ public class SynchronizedGroceryShop implements MyGroceryShop {
     private final List<WebGroceryItem> groceries = new ArrayList<>();
     private final GroceryManager groceryManager;
 
+    /**
+     * Construit une nouvelle instance avec le gestionnaire fourni.
+     * Charge initialement les articles depuis le gestionnaire.
+     *
+     * @param groceryManager le gestionnaire de liste de courses
+     */
     public SynchronizedGroceryShop(GroceryManager groceryManager) {
         this.groceryManager = groceryManager;
+        initializeFromGroceryManager();
+    }
+
+    /**
+     * Initialise les articles depuis le gestionnaire.
+     */
+    private void initializeFromGroceryManager() {
+        // Récupérer les articles par catégorie
+        Map<String, List<String>> itemsByCategory = groceryManager.getGroceryListByCategory();
+        
+        // Parcourir les articles et les ajouter à la liste locale
+        for (Map.Entry<String, List<String>> categoryEntry : itemsByCategory.entrySet()) {
+            String categoryName = categoryEntry.getKey();
+            List<String> items = categoryEntry.getValue();
+            
+            for (String itemString : items) {
+                // Analyser la chaîne au format "nom: quantité"
+                String[] parts = itemString.split(":");
+                if (parts.length >= 2) {
+                    String itemName = parts[0].trim();
+                    int quantity = Integer.parseInt(parts[1].trim());
+                    
+                    // Ajouter l'article à la liste locale sans synchroniser
+                    addItemWithoutSync(itemName, quantity, categoryName);
+                }
+            }
+        }
     }
 
     @Override
@@ -106,4 +143,4 @@ public class SynchronizedGroceryShop implements MyGroceryShop {
             System.getProperty("os.name")
         );
     }
-}
+} 

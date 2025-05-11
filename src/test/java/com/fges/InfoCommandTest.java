@@ -1,5 +1,8 @@
 package com.fges;
 
+import com.fges.commands.InfoCommand;
+import com.fges.model.CommandOptions;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -24,11 +27,11 @@ public class InfoCommandTest {
     public void testExecute_BasicFunctionality() throws Exception {
         // Arrange
         List<String> args = new ArrayList<>();
-        String category = "";
+        CommandOptions options = new CommandOptions.Builder().build();
         // Nous passons null pour groceryManager car InfoCommand ne l'utilise pas
         
         // Act
-        String result = infoCommand.execute(args, null, category);
+        String result = infoCommand.execute(args, null, options);
         
         // Assert
         // Vérifier que le résultat contient les trois informations requises
@@ -41,10 +44,12 @@ public class InfoCommandTest {
     public void testExecute_IgnoresArguments() throws Exception {
         // Arrange - Créer une liste avec des arguments qui devraient être ignorés
         List<String> args = Arrays.asList("argument1", "argument2");
-        String category = "someCategory";
+        CommandOptions options = new CommandOptions.Builder()
+                .category("someCategory")
+                .build();
         
         // Act
-        String result = infoCommand.execute(args, null, category);
+        String result = infoCommand.execute(args, null, options);
         
         // Assert
         assertTrue(result.contains("Today's Date:"));
@@ -59,10 +64,10 @@ public class InfoCommandTest {
     public void testExecute_FormatCorrectness() throws Exception {
         // Arrange
         List<String> args = new ArrayList<>();
-        String category = "";
+        CommandOptions options = new CommandOptions.Builder().build();
         
         // Act
-        String result = infoCommand.execute(args, null, category);
+        String result = infoCommand.execute(args, null, options);
         
         // Assert
         // Vérifier que le résultat est au format exact attendu avec 3 lignes
@@ -79,10 +84,10 @@ public class InfoCommandTest {
     public void testExecute_DateFormat() throws Exception {
         // Arrange
         List<String> args = new ArrayList<>();
-        String category = "";
+        CommandOptions options = new CommandOptions.Builder().build();
         
         // Act
-        String result = infoCommand.execute(args, null, category);
+        String result = infoCommand.execute(args, null, options);
         
         // Assert
         // Extraire la date du résultat

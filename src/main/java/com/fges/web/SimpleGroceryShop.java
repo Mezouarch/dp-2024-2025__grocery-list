@@ -1,13 +1,29 @@
-package com.fges;
+package com.fges.web;
+
+import com.fges.model.GroceryManager;
+import com.fges.model.WebGroceryItem;
+
+import fr.anthonyquere.MyGroceryShop;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import fr.anthonyquere.MyGroceryShop;
-
+/**
+ * Implémentation simple de l'interface de magasin pour le serveur web.
+ */
 public class SimpleGroceryShop implements MyGroceryShop {
+    private final GroceryManager groceryManager;
     private final List<WebGroceryItem> groceries = new ArrayList<>();
+
+    /**
+     * Construit un nouveau SimpleGroceryShop avec le gestionnaire fourni.
+     *
+     * @param groceryManager le gestionnaire de liste de courses
+     */
+    public SimpleGroceryShop(GroceryManager groceryManager) {
+        this.groceryManager = groceryManager;
+    }
 
     @Override
     public List<WebGroceryItem> getGroceries() {
@@ -32,4 +48,4 @@ public class SimpleGroceryShop implements MyGroceryShop {
             System.getProperty("os.name")
         );
     }
-}
+} 

@@ -1,5 +1,7 @@
 package com.fges;
 
+import com.fges.util.InputValidator;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
@@ -10,9 +12,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class InputValidatorTest {
 
@@ -22,32 +23,33 @@ class InputValidatorTest {
         @Test
         @DisplayName("Devrait accepter un nom d'article valide")
         void shouldAcceptValidItemName() {
-            assertThatCode(() -> InputValidator.validateItemName("Apple"))
-                .doesNotThrowAnyException();
+            assertTrue(InputValidator.isValidItemName("Apple"));
         }
 
         @Test
         @DisplayName("Devrait rejeter un nom d'article null")
         void shouldRejectNullItemName() {
-            assertThatThrownBy(() -> InputValidator.validateItemName(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Le nom de l'article ne peut pas être vide.");
+            assertFalse(InputValidator.isValidItemName(null));
         }
 
         @Test
         @DisplayName("Devrait rejeter un nom d'article vide")
         void shouldRejectEmptyItemName() {
-            assertThatThrownBy(() -> InputValidator.validateItemName(""))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Le nom de l'article ne peut pas être vide.");
+            assertFalse(InputValidator.isValidItemName(""));
         }
 
         @Test
         @DisplayName("Devrait rejeter un nom d'article contenant uniquement des espaces")
         void shouldRejectWhitespaceOnlyItemName() {
-            assertThatThrownBy(() -> InputValidator.validateItemName("   "))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Le nom de l'article ne peut pas être vide.");
+            assertFalse(InputValidator.isValidItemName("   "));
+        }
+        
+        @Test
+        @DisplayName("Devrait rejeter un nom d'article contenant des caractères spéciaux")
+        void shouldRejectItemNameWithSpecialChars() {
+            assertFalse(InputValidator.isValidItemName("Apple,"));
+            assertFalse(InputValidator.isValidItemName("Apple:"));
+            assertFalse(InputValidator.isValidItemName("Apple;"));
         }
     }
 
@@ -57,68 +59,19 @@ class InputValidatorTest {
         @Test
         @DisplayName("Devrait accepter une quantité positive")
         void shouldAcceptPositiveQuantity() {
-            assertThatCode(() -> InputValidator.validateQuantity(5))
-                .doesNotThrowAnyException();
+            assertTrue(InputValidator.isValidQuantity(5));
         }
 
         @Test
-        @DisplayName("Devrait accepter une quantité négative")
-        void shouldAcceptNegativeQuantity() {
-            assertThatCode(() -> InputValidator.validateQuantity(-5))
-                .doesNotThrowAnyException();
+        @DisplayName("Devrait rejeter une quantité négative")
+        void shouldRejectNegativeQuantity() {
+            assertFalse(InputValidator.isValidQuantity(-5));
         }
 
         @Test
         @DisplayName("Devrait rejeter une quantité nulle")
         void shouldRejectZeroQuantity() {
-            assertThatThrownBy(() -> InputValidator.validateQuantity(0))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("La quantité doit être différente de zéro.");
-        }
-
-        @ParameterizedTest
-        @ValueSource(strings = {"1", "-1", "100", "-100"})
-        @DisplayName("Devrait parser et valider des quantités valides")
-        void shouldParseAndValidateValidQuantities(String quantityStr) {
-            assertThatCode(() -> InputValidator.parseAndValidateQuantity(quantityStr))
-                .doesNotThrowAnyException();
-        }
-
-        @ParameterizedTest
-        @ValueSource(strings = {"0", "abc", "1.5", ""})
-        @DisplayName("Devrait rejeter des quantités invalides")
-        void shouldRejectInvalidQuantities(String quantityStr) {
-            assertThatThrownBy(() -> InputValidator.parseAndValidateQuantity(quantityStr))
-                .isInstanceOf(IllegalArgumentException.class);
-        }
-    }
-
-    @Nested
-    @DisplayName("Tests pour la validation des arguments de commande")
-    class CommandArgsValidationTests {
-        @Test
-        @DisplayName("Devrait accepter des arguments valides")
-        void shouldAcceptValidArgs() {
-            List<String> args = Arrays.asList("add", "Apple", "5");
-            assertThatCode(() -> InputValidator.validateCommandArgs(args, 3, "add"))
-                .doesNotThrowAnyException();
-        }
-
-        @Test
-        @DisplayName("Devrait rejeter des arguments insuffisants")
-        void shouldRejectInsufficientArgs() {
-            List<String> args = Arrays.asList("add", "Apple");
-            assertThatThrownBy(() -> InputValidator.validateCommandArgs(args, 3, "add"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Arguments manquants pour la commande 'add'.");
-        }
-
-        @Test
-        @DisplayName("Devrait rejeter une liste d'arguments null")
-        void shouldRejectNullArgs() {
-            assertThatThrownBy(() -> InputValidator.validateCommandArgs(null, 1, "list"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Arguments manquants pour la commande 'list'.");
+            assertFalse(InputValidator.isValidQuantity(0));
         }
     }
 
@@ -128,24 +81,27 @@ class InputValidatorTest {
         @Test
         @DisplayName("Devrait accepter un nom de fichier valide")
         void shouldAcceptValidFileName() {
-            assertThatCode(() -> InputValidator.validateFileName("grocery_list.json"))
-                .doesNotThrowAnyException();
+            assertTrue(InputValidator.isValidFileName("grocery_list.json"));
         }
 
         @Test
         @DisplayName("Devrait rejeter un nom de fichier null")
         void shouldRejectNullFileName() {
-            assertThatThrownBy(() -> InputValidator.validateFileName(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Le nom du fichier ne peut pas être vide.");
+            assertFalse(InputValidator.isValidFileName(null));
         }
 
         @Test
         @DisplayName("Devrait rejeter un nom de fichier vide")
         void shouldRejectEmptyFileName() {
-            assertThatThrownBy(() -> InputValidator.validateFileName(""))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Le nom du fichier ne peut pas être vide.");
+            assertFalse(InputValidator.isValidFileName(""));
+        }
+        
+        @Test
+        @DisplayName("Devrait rejeter un nom de fichier avec caractères spéciaux")
+        void shouldRejectFileNameWithSpecialChars() {
+            assertFalse(InputValidator.isValidFileName("file:name"));
+            assertFalse(InputValidator.isValidFileName("file/name"));
+            assertFalse(InputValidator.isValidFileName("file\\name"));
         }
     }
 
@@ -155,31 +111,71 @@ class InputValidatorTest {
         @Test
         @DisplayName("Devrait accepter le format JSON")
         void shouldAcceptJsonFormat() {
-            assertThatCode(() -> InputValidator.validateStorageFormat("json"))
-                .doesNotThrowAnyException();
+            assertTrue(InputValidator.isValidStorageFormat("json"));
         }
 
         @Test
         @DisplayName("Devrait accepter le format CSV")
         void shouldAcceptCsvFormat() {
-            assertThatCode(() -> InputValidator.validateStorageFormat("csv"))
-                .doesNotThrowAnyException();
+            assertTrue(InputValidator.isValidStorageFormat("csv"));
         }
 
         @Test
         @DisplayName("Devrait rejeter un format null")
         void shouldRejectNullFormat() {
-            assertThatThrownBy(() -> InputValidator.validateStorageFormat(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Le format de stockage ne peut pas être vide.");
+            assertFalse(InputValidator.isValidStorageFormat(null));
         }
 
         @Test
         @DisplayName("Devrait rejeter un format non supporté")
         void shouldRejectUnsupportedFormat() {
-            assertThatThrownBy(() -> InputValidator.validateStorageFormat("xml"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Format de stockage non supporté. Utilisez 'json' ou 'csv'.");
+            assertFalse(InputValidator.isValidStorageFormat("xml"));
+        }
+    }
+    
+    @Nested
+    @DisplayName("Tests pour la validation des ports")
+    class PortValidationTests {
+        @Test
+        @DisplayName("Devrait accepter un port valide")
+        void shouldAcceptValidPort() {
+            assertTrue(InputValidator.isValidPort(8080));
+            assertTrue(InputValidator.isValidPort(1));
+            assertTrue(InputValidator.isValidPort(65535));
+        }
+        
+        @Test
+        @DisplayName("Devrait rejeter un port invalide")
+        void shouldRejectInvalidPort() {
+            assertFalse(InputValidator.isValidPort(0));
+            assertFalse(InputValidator.isValidPort(-1));
+            assertFalse(InputValidator.isValidPort(65536));
+        }
+    }
+    
+    @Nested
+    @DisplayName("Tests pour la validation des catégories")
+    class CategoryValidationTests {
+        @Test
+        @DisplayName("Devrait accepter une catégorie valide")
+        void shouldAcceptValidCategory() {
+            assertTrue(InputValidator.isValidCategory("fruits"));
+        }
+        
+        @Test
+        @DisplayName("Devrait rejeter une catégorie null ou vide")
+        void shouldRejectNullOrEmptyCategory() {
+            assertFalse(InputValidator.isValidCategory(null));
+            assertFalse(InputValidator.isValidCategory(""));
+            assertFalse(InputValidator.isValidCategory("   "));
+        }
+        
+        @Test
+        @DisplayName("Devrait rejeter une catégorie avec caractères spéciaux")
+        void shouldRejectCategoryWithSpecialChars() {
+            assertFalse(InputValidator.isValidCategory("fruits,"));
+            assertFalse(InputValidator.isValidCategory("fruits:"));
+            assertFalse(InputValidator.isValidCategory("fruits;"));
         }
     }
 } 
