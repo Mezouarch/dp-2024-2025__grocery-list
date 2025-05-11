@@ -49,9 +49,41 @@ public class CLIHandler {
             return 1;
         }
 
+        // Extract original command
         String commandName = positionalArgs.get(0);
         
-        // Build command options
+        // Prepare CommandOptions
+        CommandOptions options = parseCommandOptions(cmd, positionalArgs);
+        
+        // If category command was used, update positional args and command name
+        if ("category".equals(commandName) && positionalArgs.size() > 1) {
+            positionalArgs = positionalArgs.subList(2, positionalArgs.size());
+            if (positionalArgs.isEmpty()) {
+                System.err.println("Commande manquante après la spécification de la catégorie.");
+                return 1;
+            }
+            commandName = positionalArgs.get(0);
+        }
+
+        // Check if the command requires a file and if it's provided
+        if (!commandRequiresNoFile(commandName) && options.getFileName() == null) {
+            System.err.println("L'option --source est requise pour cette commande.");
+            return 1;
+        }
+
+        // Prepare file if necessary
+        if (prepareFile(options, commandRequiresNoFile(commandName)) != 0) {
+            return 1;
+        }
+
+        // Execute command with appropriate managers
+        return executeCommand(commandName, positionalArgs, options);
+    }
+
+    /**
+     * Parse command line options and build CommandOptions object
+     */
+    private static CommandOptions parseCommandOptions(CommandLine cmd, List<String> positionalArgs) {
         CommandOptions.Builder optionsBuilder = new CommandOptions.Builder();
         
         // Add source file if present
@@ -63,113 +95,131 @@ public class CLIHandler {
         String format = cmd.getOptionValue("format", "json");
         if (!format.equals("json") && !format.equals("csv")) {
             System.err.println("Format non supporté. Utilisez 'json' ou 'csv'.");
-            return 1;
+            format = "json"; // Default to JSON for invalid formats
         }
         optionsBuilder.format(format);
         
-        // Add category if present
+        // Add category if present from --category option
         if (cmd.hasOption("category")) {
             optionsBuilder.category(cmd.getOptionValue("category"));
         }
         
-        CommandOptions options = optionsBuilder.build();
-        
-        // Vérifier les exigences selon la commande
-        if (options.getFileName() == null && !"info".equals(commandName)) {
-            System.err.println("L'option --source est requise pour cette commande.");
-            return 1;
-        }
-
-        // Pour les commandes autres que info, on gère le fichier
-        if (!"info".equals(commandName) && options.getFileName() != null) {
-            String fileName = options.getFileName();
-            // Normaliser le nom du fichier pour le format JSON
-            if ("json".equalsIgnoreCase(options.getFormat()) && !fileName.toLowerCase().endsWith(".json")) {
-                fileName = fileName + ".json";
-                // Update the filename in options
-                optionsBuilder.fileName(fileName);
-                options = optionsBuilder.build();
-            }
-
-            // Créer le fichier s'il n'existe pas
-            File file = new File(fileName);
-            if (!file.exists()) {
-                try {
-                    file.createNewFile();
-                } catch (IOException e) {
-                    System.err.println("Erreur lors de la création du fichier : " + fileName);
-                    return 1;
-                }
-            }
-        }
-
-        // Vérifier si la commande est "category" suivie d'une valeur
+        // Add category if present from "category" command
+        String commandName = positionalArgs.get(0);
         if ("category".equals(commandName) && positionalArgs.size() > 1) {
             optionsBuilder.category(positionalArgs.get(1));
-            options = optionsBuilder.build();
-            // Reconstruire la liste des arguments en supprimant "category" et sa valeur
-            positionalArgs = positionalArgs.subList(2, positionalArgs.size());
-            if (positionalArgs.isEmpty()) {
-                System.err.println("Commande manquante après la spécification de la catégorie.");
-                return 1;
-            }
-            commandName = positionalArgs.get(0);
         }
-
-        // Initialiser les gestionnaires de données
-        StorageManager storageManager = null;
-        GroceryManager groceryManager = null;
         
-        // Initialiser les gestionnaires si nécessaire
-        if (!"info".equals(commandName)) {
-            // Créer le gestionnaire de stockage approprié
-            storageManager = StorageManagerFactory.createStorageManager(options.getFormat());
-            
-            // Gestionnaire de la liste de courses
-            groceryManager = new GroceryManager(storageManager);
-            
-            // Charger la liste existante si le fichier est spécifié
-            if (options.getFileName() != null) {
-                try {
-                    groceryManager.loadGroceryList(options.getFileName());
-                } catch (IOException e) {
-                    // Si le fichier est vide ou corrompu, on continue avec une liste vide
-                    System.err.println("Attention : Le fichier " + options.getFileName() + " est vide ou corrompu. Une nouvelle liste sera créée.");
-                }
-            }
+        return optionsBuilder.build();
+    }
+    
+    /**
+     * Prepare the file for operations if needed
+     */
+    private static int prepareFile(CommandOptions options, boolean noFileRequired) {
+        if (noFileRequired || options.getFileName() == null) {
+            return 0; // No file preparation needed
         }
-
-        // Exécution de la commande
-        Optional<Command> command = getCommand(commandName);
-        if (command.isPresent()) {
+        
+        String fileName = options.getFileName();
+        
+        // Normalize filename for JSON format
+        if ("json".equalsIgnoreCase(options.getFormat()) && !fileName.toLowerCase().endsWith(".json")) {
+            fileName = fileName + ".json";
+        }
+        
+        // Create file if it doesn't exist
+        File file = new File(fileName);
+        if (!file.exists()) {
             try {
-                String result = command.get().execute(positionalArgs, groceryManager, options);
-                System.out.println(result);
-                
-                // Sauvegarder la liste après chaque commande (sauf pour info et web)
-                if (!"info".equals(commandName) && !"web".equals(commandName) && groceryManager != null && options.getFileName() != null) {
-                    groceryManager.saveGroceryList(options.getFileName());
-                }
-                
-                // Pour la commande web, on maintient le programme en vie
-                if ("web".equals(commandName)) {
-                    // Attente indéfinie pour maintenir le serveur web en vie
-                    try {
-                        Thread.currentThread().join();
-                    } catch (InterruptedException e) {
-                        System.err.println("Serveur web interrompu: " + e.getMessage());
-                    }
-                }
-                
-                return 0;
-            } catch (Exception e) {
-                System.err.println("Erreur lors de l'exécution de la commande : " + e.getMessage());
+                file.createNewFile();
+            } catch (IOException e) {
+                System.err.println("Erreur lors de la création du fichier : " + fileName);
                 return 1;
             }
-        } else {
+        }
+        
+        return 0;
+    }
+    
+    /**
+     * Execute the command with appropriate managers
+     */
+    private static int executeCommand(String commandName, List<String> positionalArgs, CommandOptions options) {
+        // Get the command implementation
+        Optional<Command> command = getCommand(commandName);
+        if (command.isEmpty()) {
             System.err.println("Commande inconnue : " + commandName);
             return 1;
         }
+        
+        // Initialize managers only if required
+        StorageManager storageManager = null;
+        GroceryManager groceryManager = null;
+        
+        if (!commandRequiresNoFile(commandName)) {
+            try {
+                storageManager = StorageManagerFactory.createStorageManager(options.getFormat());
+                groceryManager = new GroceryManager(storageManager);
+                
+                if (options.getFileName() != null) {
+                    try {
+                        groceryManager.loadGroceryList(options.getFileName());
+                    } catch (IOException e) {
+                        System.err.println("Attention : Le fichier " + options.getFileName() + 
+                                           " est vide ou corrompu. Une nouvelle liste sera créée.");
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Erreur lors de l'initialisation : " + e.getMessage());
+                return 1;
+            }
+        }
+        
+        // Execute the command
+        try {
+            String result = command.get().execute(positionalArgs, groceryManager, options);
+            System.out.println(result);
+            
+            // Save if needed
+            if (commandRequiresSaving(commandName) && groceryManager != null && options.getFileName() != null) {
+                groceryManager.saveGroceryList(options.getFileName());
+            }
+            
+            // Handle web command special case
+            if ("web".equals(commandName)) {
+                try {
+                    Thread.currentThread().join();
+                } catch (InterruptedException e) {
+                    System.err.println("Serveur web interrompu: " + e.getMessage());
+                }
+            }
+            
+            return 0;
+        } catch (Exception e) {
+            System.err.println("Erreur lors de l'exécution de la commande : " + e.getMessage());
+            return 1;
+        }
+    }
+
+    /**
+     * Détermine si une commande ne nécessite pas de fichier.
+     *
+     * @param commandName le nom de la commande
+     * @return true si la commande ne nécessite pas de fichier, false sinon
+     */
+    private static boolean commandRequiresNoFile(String commandName) {
+        return "info".equals(commandName);
+    }
+
+    /**
+     * Détermine si une commande nécessite de sauvegarder la liste après exécution.
+     *
+     * @param commandName le nom de la commande
+     * @return true si la commande nécessite une sauvegarde, false sinon
+     */
+    private static boolean commandRequiresSaving(String commandName) {
+        return !("info".equals(commandName) || "web".equals(commandName));
     }
 
     /**

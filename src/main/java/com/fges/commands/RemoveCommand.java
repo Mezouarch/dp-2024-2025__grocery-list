@@ -34,9 +34,6 @@ public class RemoveCommand implements Command {
             }
         }
         
-        // Récupérer la quantité avant suppression pour le message
-        int quantity = groceryManager.getItemQuantity(itemName);
-        
         // Supprimer l'article
         groceryManager.removeItem(itemName);
         

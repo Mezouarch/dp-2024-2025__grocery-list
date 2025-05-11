@@ -4,7 +4,6 @@ import com.fges.model.GroceryItem;
 import com.fges.model.GroceryManager;
 import com.fges.storage.JsonStorageManager;
 import com.fges.storage.StorageManager;
-import com.fges.util.MessageFormatter;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -2,7 +2,6 @@ package com.fges;
 
 import com.fges.commands.ListCommand;
 import com.fges.model.CommandOptions;
-import com.fges.model.GroceryItem;
 import com.fges.model.GroceryManager;
 import com.fges.storage.JsonStorageManager;
 

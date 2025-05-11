@@ -1,7 +1,6 @@
 package com.fges.web;
 
 import com.fges.model.GroceryManager;
-import com.fges.model.WebGroceryItem;
 
 import fr.anthonyquere.MyGroceryShop;
 
@@ -23,6 +22,11 @@ public class SimpleGroceryShop implements MyGroceryShop {
      */
     public SimpleGroceryShop(GroceryManager groceryManager) {
         this.groceryManager = groceryManager;
+        
+        // Initialiser la liste avec les éléments existants
+        groceryManager.getItems().forEach(item -> 
+            groceries.add(new WebGroceryItem(item.getName(), item.getQuantity(), item.getCategory()))
+        );
     }
 
     @Override
@@ -32,12 +36,22 @@ public class SimpleGroceryShop implements MyGroceryShop {
 
     @Override
     public void addGroceryItem(String name, int quantity, String category) {
-        groceries.add(new WebGroceryItem(name, quantity, category));
+        try {
+            groceryManager.addItem(name, quantity, category);
+            groceries.add(new WebGroceryItem(name, quantity, category));
+        } catch (Exception e) {
+            // Ignorer les erreurs pour l'interface web
+        }
     }
 
     @Override
     public void removeGroceryItem(String name) {
-        groceries.removeIf(item -> item.name().equals(name));
+        try {
+            groceryManager.removeItem(name);
+            groceries.removeIf(item -> item.name().equals(name));
+        } catch (Exception e) {
+            // Ignorer les erreurs pour l'interface web
+        }
     }
 
     @Override
