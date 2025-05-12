@@ -28,7 +28,7 @@ Après analyse du code fourni, toutes les fonctionnalités prévues ont bien ét
 
 1. Factory Pattern (StorageManagerFactory) :
 
-est utilisé pour encapsuler la création d'objets dans une classe dédiée, isolant ainsi le code client des détails d'instanciation.
+Utilisé pour encapsuler la création d'objets dans une classe dédiée, isolant ainsi le code client des détails d'instanciation.
 Avantage : Encapsule la logique de création et facilite l'ajout de nouveaux formats de stockage.
 
 2. Strategy Pattern (interface StorageManager) :
@@ -72,6 +72,8 @@ Avantage : Permet l'interopérabilité entre des interfaces incompatibles.
 4. Mettre à jour la méthode isValidStorageFormat() dans InputValidator.java pour accepter le nouveau format.
 
 5. Mettre à jour les messages d'erreur dans MessageFormatter.java pour inclure le nouveau format.
+
+6. Mettre à jour le pom.xml pour inclure les nouvelles dépendences.
 
 ## Pour ajouter la possibilité de spécifier différents magasins :
 
