@@ -34,7 +34,7 @@ public class WebCommand implements Command {
         }
 
         // Création du serveur web
-        createServer(groceryManager, port);
+        createServer(groceryManager, port, options);
 
         return "Serveur web démarré sur le port " + port;
     }
@@ -44,11 +44,12 @@ public class WebCommand implements Command {
      * 
      * @param groceryManager gestionnaire de liste de courses
      * @param port port sur lequel démarrer le serveur
+     * @param options options de la commande contenant le nom du fichier
      * @return l'instance du serveur créé
      */
-    protected GroceryShopServer createServer(GroceryManager groceryManager, int port) {
+    protected GroceryShopServer createServer(GroceryManager groceryManager, int port, CommandOptions options) {
         // Création d'une interface synchronisée pour la liste de courses
-        MyGroceryShop synchronizedShop = new SynchronizedGroceryShop(groceryManager);
+        MyGroceryShop synchronizedShop = new SynchronizedGroceryShop(groceryManager, options);
         
         // Démarrage du serveur web
         GroceryShopServer server = new GroceryShopServer(synchronizedShop);

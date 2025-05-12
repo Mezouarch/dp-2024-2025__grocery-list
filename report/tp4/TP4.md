@@ -131,3 +131,6 @@ Avantage : Permet l'interopérabilité entre des interfaces incompatibles.
 
 Le projet est fonctionnel et bien structuré. Des améliorations restent possibles, notamment sur la synchronisation, les formats de stockage et de nouvelles fonctionnalités, mais la base est solide pour aller plus loin.
 
+Schéma:
+![Diagramme info](schemaTP4.png)
+

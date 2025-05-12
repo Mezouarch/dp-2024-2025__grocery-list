@@ -1,14 +1,15 @@
 package com.fges.web;
 
+import com.fges.model.GroceryManager;
+import com.fges.model.CommandOptions;
+
+import fr.anthonyquere.MyGroceryShop;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import com.fges.model.GroceryManager;
-
-import fr.anthonyquere.MyGroceryShop;
 
 /**
  * Implémentation de MyGroceryShop qui synchronise les modifications
@@ -17,15 +18,30 @@ import fr.anthonyquere.MyGroceryShop;
 public class SynchronizedGroceryShop implements MyGroceryShop {
     private final List<WebGroceryItem> groceries = new ArrayList<>();
     private final GroceryManager groceryManager;
+    private final String fileName;
 
     /**
      * Construit une nouvelle instance avec le gestionnaire fourni.
      * Charge initialement les articles depuis le gestionnaire.
      *
      * @param groceryManager le gestionnaire de liste de courses
+     * @param options les options de commande contenant le nom de fichier et le format
+     */
+    public SynchronizedGroceryShop(GroceryManager groceryManager, CommandOptions options) {
+        this.groceryManager = groceryManager;
+        this.fileName = options.getFileName();
+        initializeFromGroceryManager();
+    }
+
+    /**
+     * Construit une nouvelle instance avec le gestionnaire fourni, sans options spécifiques.
+     * Utile pour les tests ou quand aucun fichier spécifique n'est requis.
+     *
+     * @param groceryManager le gestionnaire de liste de courses
      */
     public SynchronizedGroceryShop(GroceryManager groceryManager) {
         this.groceryManager = groceryManager;
+        this.fileName = null;
         initializeFromGroceryManager();
     }
 
@@ -97,6 +113,11 @@ public class SynchronizedGroceryShop implements MyGroceryShop {
                     // Puis ajouter l'élément avec la nouvelle quantité
                     groceryManager.addItem(name, newQuantity, item.category());
                     
+                    // Sauvegarder les modifications si un nom de fichier est disponible
+                    if (fileName != null) {
+                        groceryManager.saveGroceryList(fileName);
+                    }
+                    
                     System.out.println("Article mis à jour et synchronisé: " + name + " (" + newQuantity + ") dans " + item.category());
                 } catch (Exception e) {
                     System.err.println("Erreur lors de la synchronisation de la mise à jour: " + e.getMessage());
@@ -113,6 +134,12 @@ public class SynchronizedGroceryShop implements MyGroceryShop {
             // Synchroniser avec le GroceryManager
             try {
                 groceryManager.addItem(name, quantity, category);
+                
+                // Sauvegarder les modifications si un nom de fichier est disponible
+                if (fileName != null) {
+                    groceryManager.saveGroceryList(fileName);
+                }
+                
                 System.out.println("Article ajouté et synchronisé: " + name + " (" + quantity + ") dans " + category);
             } catch (IOException e) {
                 System.err.println("Erreur lors de la synchronisation de l'ajout: " + e.getMessage());
@@ -128,6 +155,12 @@ public class SynchronizedGroceryShop implements MyGroceryShop {
         // Synchroniser avec le GroceryManager
         try {
             groceryManager.removeItem(name);
+            
+            // Sauvegarder les modifications si un nom de fichier est disponible
+            if (fileName != null) {
+                groceryManager.saveGroceryList(fileName);
+            }
+            
             System.out.println("Article supprimé et synchronisé: " + name);
         } catch (Exception e) {
             System.err.println("Erreur lors de la synchronisation de la suppression: " + e.getMessage());
