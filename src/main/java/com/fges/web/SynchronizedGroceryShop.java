@@ -1,15 +1,14 @@
 package com.fges.web;
 
-import com.fges.model.GroceryManager;
-import com.fges.model.WebGroceryItem;
-
-import fr.anthonyquere.MyGroceryShop;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import com.fges.model.GroceryManager;
+
+import fr.anthonyquere.MyGroceryShop;
 
 /**
  * Implémentation de MyGroceryShop qui synchronise les modifications
